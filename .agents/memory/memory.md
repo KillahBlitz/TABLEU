@@ -1,9 +1,9 @@
 # Memory Log - TABLEU
 
 ## Project State & Movement Tracker
-- **Status:** Deployment Artifacts, Docker Configuration, CI/CD Pipeline & .gitignore Configured
+- **Status:** Auth Hardened & Quick Demo Login Vulnerability Removed
 - **Date:** 2026-08-17
-- **Current Phase:** Production Deployment & CI/CD Pipeline Configuration
+- **Current Phase:** Security Hardening - Authentication
 
 ### Movement Log
 1. **[2026-08-17] Requirement Analysis & Inspection:**
@@ -42,5 +42,8 @@
    - Created `docker-compose.yml` configured for ports:
      - Frontend on port `3030` (`3030:80`)
      - Backend on port `3031` (`3031:5001`)
-   - Created `.github/workflows/deploy.yml` with self-hosted runner automation, copying `~/.env.tableu` to `./backend/.env`, deploying `tableu-backend` and `tableu-frontend`, and pruning orphaned images.
+   - Created `.github/workflows/deploy.yml` with self-hosted runner automation.
    - Created comprehensive `.gitignore`.
+8. **[2026-08-17] Authentication Hardening:**
+   - Removed all quick-demo auto-fill buttons from `AuthView.jsx`.
+   - Strictly enforced manual email and password entry with bcrypt password validation.
