@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Layers, ArrowRight, UserCheck, Shield } from 'lucide-react';
+import { Layers, ArrowRight } from 'lucide-react';
 
 export const AuthView = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -31,12 +31,6 @@ export const AuthView = () => {
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const handleQuickAdmin = (adminEmail) => {
-    setEmail(adminEmail);
-    setPassword('Admin123!');
-    setIsLogin(true);
   };
 
   return (
@@ -124,36 +118,6 @@ export const AuthView = () => {
             <ArrowRight size={16} />
           </button>
         </form>
-
-        <div className="quick-demo-section">
-          <div className="quick-demo-title" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Shield size={12} color="var(--accent-todo)" />
-            <span>Acceso Rápido Administradores Iniciales</span>
-          </div>
-          <div className="quick-demo-buttons">
-            <button
-              type="button"
-              className="btn-quick-user"
-              onClick={() => handleQuickAdmin('jacobo.monroy@tableu.io')}
-            >
-              Jacobo M. (Admin)
-            </button>
-            <button
-              type="button"
-              className="btn-quick-user"
-              onClick={() => handleQuickAdmin('christopher.figueroa@tableu.io')}
-            >
-              Christopher F. (Admin)
-            </button>
-            <button
-              type="button"
-              className="btn-quick-user"
-              onClick={() => handleQuickAdmin('lizbeth.loza@tableu.io')}
-            >
-              Lizbeth L. (Admin)
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
