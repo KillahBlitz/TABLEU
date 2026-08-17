@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  tableu-backend:
+    container_name: tableu-backend-prod
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3031:5001"
+    networks:
+      - tableu-network
+
+  tableu-frontend:
+    container_name: tableu-frontend-prod
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3030:80"
+    depends_on:
+      - tableu-backend
+    networks:
+      - tableu-network
+
+networks:
+  tableu-network:
+    driver: bridge

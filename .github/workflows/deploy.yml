@@ -1,0 +1,55 @@
+name: CI/CD Pipeline - TABLEU Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  preparar-deploy:
+    name: 🔍 Preparando deploy
+    runs-on: self-hosted
+    steps:
+      - name: ⚡ Validar conexión y entorno del Runner
+        run: |
+          echo "=========================================="
+          echo "  Verificando estado del runner y entorno"
+          echo "=========================================="
+          echo "Directorio de trabajo actual: $PWD"
+          echo "Usuario ejecutando: $(whoami)"
+          docker --version
+          docker compose version
+          echo "¡El runner está listo y conectado correctamente!"
+
+  deploy-prod:
+    name: 🚀 Deploy To Prod
+    needs: preparar-deploy
+    runs-on: self-hosted
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: 📥 Checkout del código
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Preparar variables de entorno (producción)
+        run: |
+          echo "Copiando variables de entorno desde el host..."
+          cp ~/.env.tableu ./backend/.env
+          echo "Variables de entorno inyectadas exitosamente."
+
+      - name: 🚀 Desplegar Backend (Node.js Express - Puerto 3031)
+        run: |
+          echo "Desplegando servicio Backend (tableu-backend-prod) en puerto 3031..."
+          docker rm -f tableu-backend-prod || true
+          docker compose -p tableu-prod up -d --build --remove-orphans tableu-backend
+
+      - name: 🚀 Desplegar Frontend (React Vite Nginx - Puerto 3030)
+        run: |
+          echo "Desplegando servicio Frontend (tableu-frontend-prod) en puerto 3030..."
+          docker rm -f tableu-frontend-prod || true
+          docker compose -p tableu-prod up -d --build --remove-orphans tableu-frontend
+
+      - name: 🧹 Limpieza de imágenes huérfanas
+        run: |
+          echo "Limpiando imágenes Docker no utilizadas para liberar espacio..."
+          docker image prune -f
+          echo "¡Despliegue de TABLEU (Backend & Frontend) en producción completado con éxito!"
