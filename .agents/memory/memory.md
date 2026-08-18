@@ -47,3 +47,15 @@
 8. **[2026-08-17] Authentication Hardening:**
    - Removed all quick-demo auto-fill buttons from `AuthView.jsx`.
    - Strictly enforced manual email and password entry with bcrypt password validation.
+9. **[2026-08-18] Attendance Management Module (Admin Only):**
+   - Created `Attendance` Mongoose model with unique compound index `{ userId, date }` and 3 statuses: `present`, `absent`, `unregistered`.
+   - Created `attendanceController.js` with 4 operations: `getAttendance` (with virtual unregistered filling), `markAttendance` (upsert), `bulkMarkAttendance` (bulkWrite), `getAttendanceSummary` (attendance rate calculation).
+   - Created `attendanceRoutes.js` protected by `protect` + `requireAdmin` middleware.
+   - Registered `/api/attendance` routes in `server.js`.
+   - Created `attendanceService.js` frontend API wrapper.
+   - Created `AttendanceDashboard.jsx` with two views:
+     - **Daily View:** Date navigation (← / →), team member table with 3-state selectors (Asistencia/Falta/Sin Registro), inline notes, summary counters, and bulk save.
+     - **Summary View:** Date range selector with per-user totals (present/absent/unregistered) and attendance rate progress bars.
+   - Created `attendance.css` with full dark palette integration (design tokens from `main.css`).
+   - Added "Asistencias" tab in `Navbar.jsx` (admin-only, `ClipboardCheck` icon).
+   - Added `/attendance` route in `App.jsx` protected with `adminOnly={true}`.

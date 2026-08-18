@@ -8,6 +8,7 @@ import { AuthView } from './components/auth/AuthView';
 import { KanbanBoard } from './components/kanban/KanbanBoard';
 import { BacklogView } from './components/backlog/BacklogView';
 import { KpiDashboard } from './components/kpis/KpiDashboard';
+import { AttendanceDashboard } from './components/attendance/AttendanceDashboard';
 
 const AppLayout = ({ children }) => {
   const { user } = useAuth();
@@ -52,6 +53,15 @@ export const App = () => {
               element={
                 <ProtectedRoute adminOnly={true}>
                   <KpiDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute adminOnly={true}>
+                  <AttendanceDashboard />
                 </ProtectedRoute>
               }
             />
