@@ -97,6 +97,19 @@ export const getKpisByUser = async (req, res) => {
           ? Number(((completedPoints / totalPoints) * 100).toFixed(2))
           : 0;
 
+      const categoryBreakdown = {
+        tarea: userStories.filter((s) => s.category === 'tarea').length,
+        historia: userStories.filter((s) => s.category === 'historia').length,
+        hito: userStories.filter((s) => s.category === 'hito').length,
+        bug: userStories.filter((s) => s.category === 'bug').length,
+        mejora: userStories.filter((s) => s.category === 'mejora').length
+      };
+
+      const uncategorized = userStories.filter((s) => !s.category).length;
+      if (uncategorized > 0) {
+        categoryBreakdown.tarea += uncategorized;
+      }
+
       return {
         userId: user._id,
         userName: user.name,
@@ -114,7 +127,8 @@ export const getKpisByUser = async (req, res) => {
         hoursDeviation,
         totalPoints,
         completedPoints,
-        pointsProgress
+        pointsProgress,
+        categoryBreakdown
       };
     });
 

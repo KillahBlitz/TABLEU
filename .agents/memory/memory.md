@@ -79,3 +79,10 @@
     - Added `/uploads` proxy in `vite.config.js` for dev server.
     - Added `backend/uploads/*` to `.gitignore` with `.gitkeep`.
     - Full CSS added to `kanban.css`: `.category-pill`, `.category-selector`, `.category-option`, `.attach-badge`, `.attachments-section`, `.attachment-grid`, `.attachment-thumb`, `.attachment-lightbox`, `.lightbox-nav`, etc.
+11. **[2026-08-19] KPIs Category Distribution Histograms per User:**
+    - **Backend:** Updated `getKpisByUser` in `kpiController.js` to compute and return `categoryBreakdown` (`tarea`, `historia`, `hito`, `bug`, `mejora`) for every registered user.
+    - **Histogram Visualization:** Created `CategoryDistributionChart.jsx` rendering statistical histograms with "Frecuencia" on the Y-axis, axis tick marks, coordinate grid, contiguous colored category bars (`#00E5FF`, `#B388FF`, `#00FFCC`, `#FF007F`, `#FFEA00`), floating value bubbles, inner count badges, and "Categorías" on the X-axis with icons and pills.
+    - **Filter & Responsive Layout:** Added developer filter dropdown to view all users or inspect a specific user's histogram individually.
+    - **Integrated into Dashboard:** Rendered `CategoryDistributionChart` in `KpiDashboard.jsx`.
+    - **Backlog & Board Icons:** Configured category badges with icons and labels visible in `StoryCard.jsx` (Kanban Board) and `BacklogView.jsx` (Product Backlog table).
+    - **CSS:** Added complete histogram styles to `kpi.css`.

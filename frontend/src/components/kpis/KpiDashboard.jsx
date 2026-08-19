@@ -4,6 +4,7 @@ import { sprintService } from '../../services/sprintService';
 import { MetricCard } from './MetricCard';
 import { UserPerformanceTable } from './UserPerformanceTable';
 import { EpicProgressChart } from './EpicProgressChart';
+import { CategoryDistributionChart } from './CategoryDistributionChart';
 import { CheckCircle2, Clock, Flame, AlertOctagon, BarChart2, Calendar, Target, Flag } from 'lucide-react';
 
 export const KpiDashboard = () => {
@@ -228,6 +229,8 @@ export const KpiDashboard = () => {
           </div>
 
           <UserPerformanceTable usersKpi={usersKpi} onUserDeleted={loadKpis} />
+
+          <CategoryDistributionChart usersKpi={usersKpi} />
 
           <EpicProgressChart epicsKpi={epicsKpi} />
         </>

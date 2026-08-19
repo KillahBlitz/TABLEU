@@ -189,7 +189,7 @@ export const BacklogView = () => {
                     style={{ cursor: 'pointer' }}
                   >
                     <td>
-                      <CategoryBadge category={story.category} size={14} showLabel={false} />
+                      <CategoryBadge category={story.category} size={14} showLabel={true} />
                     </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
