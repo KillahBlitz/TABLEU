@@ -4,9 +4,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
-import { seedInitialAdmins } from './config/seeder.js';
+import { seedInitialAdmins, seedInitialRoles } from './config/seeder.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import roleRoutes from './routes/roleRoutes.js';
 import epicRoutes from './routes/epicRoutes.js';
 import sprintRoutes from './routes/sprintRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
@@ -28,6 +29,7 @@ app.use('/api/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
 app.use('/api/epics', epicRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/stories', storyRoutes);
@@ -42,6 +44,7 @@ const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
   await connectDB();
+  await seedInitialRoles();
   await seedInitialAdmins();
   app.listen(PORT, () => {
     console.log(`TABLEU Server running on port ${PORT}`);

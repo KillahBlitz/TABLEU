@@ -1,10 +1,52 @@
-import React, { useState } from 'react';
-import { RoleBadge } from '../common/RoleBadge';
+import React, { useState, useEffect } from 'react';
+import { RoleBadge, JobRoleBadge } from '../common/RoleBadge';
 import { authService } from '../../services/authService';
-import { Clock, Flame, AlertOctagon, TrendingUp, TrendingDown, Trash2, Shield, BarChart3, Table as TableIcon, CheckCircle2, Zap } from 'lucide-react';
+import { roleService } from '../../services/roleService';
+import {
+  Clock, Flame, AlertOctagon, TrendingUp, TrendingDown, Trash2,
+  Shield, BarChart3, Table as TableIcon, CheckCircle2, Zap, UserCheck, Loader2
+} from 'lucide-react';
 
 export const UserPerformanceTable = ({ usersKpi = [], onUserDeleted }) => {
   const [viewMode, setViewMode] = useState('histograms');
+  const [roles, setRoles] = useState([]);
+  const [updatingUserId, setUpdatingUserId] = useState(null);
+
+  const defaultRoles = [
+    { name: 'devRH', label: 'devRH', color: '#00E5FF' },
+    { name: 'devCONTA', label: 'devCONTA', color: '#00FFCC' },
+    { name: 'TECHLEAD', label: 'TECHLEAD', color: '#B388FF' },
+    { name: 'PMO', label: 'PMO', color: '#FFEA00' }
+  ];
+
+  const loadRoles = async () => {
+    try {
+      const data = await roleService.getRoles();
+      if (Array.isArray(data) && data.length > 0) {
+        setRoles(data);
+      } else {
+        setRoles(defaultRoles);
+      }
+    } catch {
+      setRoles(defaultRoles);
+    }
+  };
+
+  useEffect(() => {
+    loadRoles();
+  }, []);
+
+  const handleRoleChange = async (userId, newJobRole) => {
+    try {
+      setUpdatingUserId(userId);
+      await authService.updateUserRole(userId, { jobRole: newJobRole });
+      if (onUserDeleted) onUserDeleted();
+    } catch (error) {
+      alert(error.message || 'Error al actualizar el rol');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
 
   const handleDelete = async (user) => {
     if (!window.confirm(`¿Eliminar la cuenta del desarrollador "${user.userName}" (${user.email})? Sus historias asignadas quedarán sin asignar.`)) {
@@ -18,6 +60,8 @@ export const UserPerformanceTable = ({ usersKpi = [], onUserDeleted }) => {
       alert(error.message || 'Error al eliminar el desarrollador');
     }
   };
+
+  const roleOptions = roles.length > 0 ? roles : defaultRoles;
 
   return (
     <div className="kpi-section">
@@ -68,6 +112,8 @@ export const UserPerformanceTable = ({ usersKpi = [], onUserDeleted }) => {
               ? Math.round((user.completed / user.totalAssigned) * 100)
               : 0;
 
+            const currentJobRole = user.jobRole || 'devRH';
+
             return (
               <div key={user.userId} className="dev-histogram-card">
                 <div className="dev-card-header">
@@ -84,8 +130,28 @@ export const UserPerformanceTable = ({ usersKpi = [], onUserDeleted }) => {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     <RoleBadge role={user.role} />
+
+                    <div className="job-role-select-wrapper">
+                      <select
+                        className="job-role-select"
+                        value={currentJobRole}
+                        onChange={(e) => handleRoleChange(user.userId, e.target.value)}
+                        disabled={updatingUserId === user.userId}
+                        title="Asignar rol de equipo"
+                      >
+                        {roleOptions.map((r) => (
+                          <option key={r.name || r._id} value={r.name}>
+                            {r.label || r.name}
+                          </option>
+                        ))}
+                      </select>
+                      {updatingUserId === user.userId && (
+                        <Loader2 size={12} className="spin-animation role-loader" />
+                      )}
+                    </div>
+
                     {user.role === 'developer' ? (
                       <button
                         className="btn-icon"
@@ -254,7 +320,8 @@ export const UserPerformanceTable = ({ usersKpi = [], onUserDeleted }) => {
             <thead>
               <tr>
                 <th>Desarrollador</th>
-                <th>Rol</th>
+                <th>Rol Sistema</th>
+                <th>Asignar Rol (Catálogo)</th>
                 <th>Tareas (Listo/Total)</th>
                 <th>Avance Horas</th>
                 <th>Avance Dificultad (Pts)</th>
@@ -264,109 +331,132 @@ export const UserPerformanceTable = ({ usersKpi = [], onUserDeleted }) => {
               </tr>
             </thead>
             <tbody>
-              {usersKpi.map((user) => (
-                <tr key={user.userId}>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div
-                        className="user-avatar"
-                        style={{ backgroundColor: user.avatarColor || '#00E5FF' }}
-                      >
-                        {user.userName ? user.userName[0].toUpperCase() : 'U'}
+              {usersKpi.map((user) => {
+                const currentJobRole = user.jobRole || 'devRH';
+
+                return (
+                  <tr key={user.userId}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div
+                          className="user-avatar"
+                          style={{ backgroundColor: user.avatarColor || '#00E5FF' }}
+                        >
+                          {user.userName ? user.userName[0].toUpperCase() : 'U'}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{user.userName}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{user.userName}</div>
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>{user.email}</div>
+                    </td>
+                    <td>
+                      <RoleBadge role={user.role} />
+                    </td>
+                    <td>
+                      <div className="job-role-select-wrapper">
+                        <select
+                          className="job-role-select"
+                          value={currentJobRole}
+                          onChange={(e) => handleRoleChange(user.userId, e.target.value)}
+                          disabled={updatingUserId === user.userId}
+                        >
+                          {roleOptions.map((r) => (
+                            <option key={r.name || r._id} value={r.name}>
+                              {r.label || r.name}
+                            </option>
+                          ))}
+                        </select>
+                        {updatingUserId === user.userId && (
+                          <Loader2 size={12} className="spin-animation role-loader" />
+                        )}
                       </div>
-                    </div>
-                  </td>
-                  <td>
-                    <RoleBadge role={user.role} />
-                  </td>
-                  <td>
-                    <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                      {user.completed}/{user.totalAssigned}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>
-                      ({user.totalAssigned > 0 ? Math.round((user.completed / user.totalAssigned) * 100) : 0}%)
-                    </span>
-                  </td>
-                  <td style={{ minWidth: '160px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>
-                      <span>{user.loggedHours}h / {user.estimatedHours}h</span>
-                      <span style={{ color: 'var(--accent-todo)', fontWeight: 700 }}>{user.hoursProgress}%</span>
-                    </div>
-                    <div className="progress-bar-container">
-                      <div
-                        className="progress-bar-fill"
-                        style={{
-                          width: `${Math.min(user.hoursProgress, 100)}%`,
-                          backgroundColor: 'var(--accent-todo)'
-                        }}
-                      />
-                    </div>
-                  </td>
-                  <td style={{ minWidth: '160px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>
-                      <span>{user.completedPoints} / {user.totalPoints} pts</span>
-                      <span style={{ color: 'var(--accent-done)', fontWeight: 700 }}>{user.pointsProgress}%</span>
-                    </div>
-                    <div className="progress-bar-container">
-                      <div
-                        className="progress-bar-fill"
-                        style={{
-                          width: `${Math.min(user.pointsProgress, 100)}%`,
-                          backgroundColor: 'var(--accent-done)'
-                        }}
-                      />
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                      {user.hoursDeviation > 0 ? (
-                        <>
-                          <TrendingUp size={14} color="var(--accent-blocked)" />
-                          <span style={{ color: 'var(--accent-blocked)' }}>+{user.hoursDeviation}h</span>
-                        </>
-                      ) : user.hoursDeviation < 0 ? (
-                        <>
-                          <TrendingDown size={14} color="var(--accent-done)" />
-                          <span style={{ color: 'var(--accent-done)' }}>{user.hoursDeviation}h</span>
-                        </>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                        {user.completed}/{user.totalAssigned}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '4px' }}>
+                        ({user.totalAssigned > 0 ? Math.round((user.completed / user.totalAssigned) * 100) : 0}%)
+                      </span>
+                    </td>
+                    <td style={{ minWidth: '160px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>
+                        <span>{user.loggedHours}h / {user.estimatedHours}h</span>
+                        <span style={{ color: 'var(--accent-todo)', fontWeight: 700 }}>{user.hoursProgress}%</span>
+                      </div>
+                      <div className="progress-bar-container">
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${Math.min(user.hoursProgress, 100)}%`,
+                            backgroundColor: 'var(--accent-todo)'
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td style={{ minWidth: '160px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px', fontFamily: 'var(--font-mono)' }}>
+                        <span>{user.completedPoints} / {user.totalPoints} pts</span>
+                        <span style={{ color: 'var(--accent-done)', fontWeight: 700 }}>{user.pointsProgress}%</span>
+                      </div>
+                      <div className="progress-bar-container">
+                        <div
+                          className="progress-bar-fill"
+                          style={{
+                            width: `${Math.min(user.pointsProgress, 100)}%`,
+                            backgroundColor: 'var(--accent-done)'
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                        {user.hoursDeviation > 0 ? (
+                          <>
+                            <TrendingUp size={14} color="var(--accent-blocked)" />
+                            <span style={{ color: 'var(--accent-blocked)' }}>+{user.hoursDeviation}h</span>
+                          </>
+                        ) : user.hoursDeviation < 0 ? (
+                          <>
+                            <TrendingDown size={14} color="var(--accent-done)" />
+                            <span style={{ color: 'var(--accent-done)' }}>{user.hoursDeviation}h</span>
+                          </>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>0h</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      {user.blockedCount > 0 ? (
+                        <span style={{ color: 'var(--accent-blocked)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
+                          <AlertOctagon size={14} />
+                          {user.blockedCount}
+                        </span>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>0h</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>0</span>
                       )}
-                    </div>
-                  </td>
-                  <td>
-                    {user.blockedCount > 0 ? (
-                      <span style={{ color: 'var(--accent-blocked)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 700 }}>
-                        <AlertOctagon size={14} />
-                        {user.blockedCount}
-                      </span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>0</span>
-                    )}
-                  </td>
-                  <td>
-                    {user.role === 'developer' ? (
-                      <button
-                        className="btn btn-danger btn-sm"
-                        onClick={() => handleDelete(user)}
-                        title="Eliminar cuenta de desarrollador"
-                      >
-                        <Trash2 size={13} />
-                        <span>Eliminar</span>
-                      </button>
-                    ) : (
-                      <span style={{ fontSize: '0.74rem', color: 'var(--accent-todo)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
-                        <Shield size={12} />
-                        Admin
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      {user.role === 'developer' ? (
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(user)}
+                          title="Eliminar cuenta de desarrollador"
+                        >
+                          <Trash2 size={13} />
+                          <span>Eliminar</span>
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: '0.74rem', color: 'var(--accent-todo)', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
+                          <Shield size={12} />
+                          Admin
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

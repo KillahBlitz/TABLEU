@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'developer'],
       default: 'developer'
     },
+    jobRole: {
+      type: String,
+      default: 'devRH'
+    },
     avatarColor: {
       type: String,
       default: '#00E5FF'

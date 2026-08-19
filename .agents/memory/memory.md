@@ -95,5 +95,18 @@
       - Click on file info triggers direct download.
       - Image grid with thumbnail rendering, `onError` fallback, zoom, download, and delete actions.
       - Fullscreen Lightbox with top bar containing filename, filesize, and download button.
-      - Upload loading spinner and user-facing error banner.
     - **CSS:** Added styles in `kanban.css` for `.attachment-group-container`, `.attachment-error-banner`, `.attachment-action-btn.download`, `.lightbox-top-bar`, and `.spin-animation`.
+13. **[2026-08-19] MongoDB Roles Catalog & Role Assignment in KPIs:**
+    - **MongoDB Model (`Role.js`):** Created `Role` schema (`name`, `label`, `color`, `description`).
+    - **Seeder (`seeder.js`):** Added `seedInitialRoles` function seeding the 4 catalog roles: `devRH` (`#00E5FF`), `devCONTA` (`#00FFCC`), `TECHLEAD` (`#B388FF`), `PMO` (`#FFEA00`).
+    - **Backend Endpoints:**
+      - `GET /api/roles` & `POST /api/roles` in `roleRoutes.js` and `roleController.js`.
+      - `PUT /api/users/:id/role` in `userRoutes.js` and `userController.js` to update user `jobRole` and system `role`.
+      - `getKpisByUser` in `kpiController.js` includes `jobRole` for all user KPI records.
+      - Mounted `/api/roles` and added `seedInitialRoles()` on startup in `server.js`.
+    - **Frontend Service (`roleService.js` & `authService.js`):** Added `getRoles()` in `roleService.js` and `updateUserRole()` in `authService.js`.
+    - **UI Components:**
+      - Created `JobRoleBadge` in `RoleBadge.jsx`.
+      - Added "Asignar Rol (Catálogo)" column with real-time dropdown selector in `UserPerformanceTable.jsx` (Table View).
+      - Added role selector and `JobRoleBadge` to Developer Histogram Cards (`dev-histogram-card`).
+    - **CSS:** Added styles in `kpi.css` for `.job-role-badge`, `.job-role-select-wrapper`, `.job-role-select`, and `.role-loader`.

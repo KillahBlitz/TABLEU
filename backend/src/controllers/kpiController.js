@@ -116,6 +116,7 @@ export const getKpisByUser = async (req, res) => {
         email: user.email,
         avatarColor: user.avatarColor,
         role: user.role,
+        jobRole: user.jobRole || 'devRH',
         totalAssigned,
         completed,
         inProgress,

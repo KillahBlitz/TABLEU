@@ -577,3 +577,58 @@
   padding-left: 44px;
 }
 
+.job-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.job-role-select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.job-role-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--accent-todo);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.job-role-select:hover {
+  background: rgba(0, 229, 255, 0.08);
+  border-color: var(--accent-todo);
+}
+
+.job-role-select:focus {
+  border-color: var(--accent-todo);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+
+.job-role-select option {
+  background: #181818;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.role-loader {
+  position: absolute;
+  right: 6px;
+  color: var(--accent-todo);
+  pointer-events: none;
+}
+

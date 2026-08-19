@@ -5,5 +5,6 @@ export const authService = {
   register: (userData) => api.post('/auth/register', userData),
   getMe: () => api.get('/auth/me'),
   getUsers: () => api.get('/users'),
-  deleteUser: (id) => api.delete(`/users/${id}`)
+  deleteUser: (id) => api.delete(`/users/${id}`),
+  updateUserRole: (id, roleData) => api.put(`/users/${id}/role`, roleData)
 };
