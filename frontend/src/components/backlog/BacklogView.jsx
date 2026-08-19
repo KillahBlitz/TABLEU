@@ -8,7 +8,8 @@ import { StoryModal } from '../kanban/StoryModal';
 import { StoryFormModal } from './StoryFormModal';
 import { EpicManagerModal } from '../epics/EpicManagerModal';
 import { SprintControlModal } from '../sprints/SprintControlModal';
-import { Plus, ListTodo, Layers, Calendar, Filter, Clock, Flame, AlertOctagon } from 'lucide-react';
+import { CategoryBadge, CATEGORY_OPTIONS } from '../common/CategoryConfig';
+import { Plus, ListTodo, Layers, Calendar, Clock, Flame, AlertOctagon, Paperclip } from 'lucide-react';
 
 export const BacklogView = () => {
   const { isAdmin } = useAuth();
@@ -21,6 +22,7 @@ export const BacklogView = () => {
 
   const [selectedSprintFilter, setSelectedSprintFilter] = useState('all');
   const [selectedEpicFilter, setSelectedEpicFilter] = useState('');
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
 
   const [activeStory, setActiveStory] = useState(null);
   const [isStoryModalOpen, setIsStoryModalOpen] = useState(false);
@@ -64,6 +66,10 @@ export const BacklogView = () => {
       return false;
     }
 
+    if (selectedCategoryFilter && story.category !== selectedCategoryFilter) {
+      return false;
+    }
+
     return true;
   });
 
@@ -102,6 +108,19 @@ export const BacklogView = () => {
             {epics.map((ep) => (
               <option key={ep._id} value={ep._id}>
                 {ep.title}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="filter-select"
+            value={selectedCategoryFilter}
+            onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+          >
+            <option value="">Todas las Categorías</option>
+            {CATEGORY_OPTIONS.map((cat) => (
+              <option key={cat.value} value={cat.value}>
+                {cat.label}
               </option>
             ))}
           </select>
@@ -148,6 +167,7 @@ export const BacklogView = () => {
             <table className="backlog-table">
               <thead>
                 <tr>
+                  <th>Tipo</th>
                   <th>Historia</th>
                   <th>Épica (Categoría)</th>
                   <th>Sprint</th>
@@ -169,11 +189,20 @@ export const BacklogView = () => {
                     style={{ cursor: 'pointer' }}
                   >
                     <td>
+                      <CategoryBadge category={story.category} size={14} showLabel={false} />
+                    </td>
+                    <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {story.isBlocked && (
                           <AlertOctagon size={16} color="var(--accent-blocked)" title={story.blockedReason} />
                         )}
                         <span style={{ fontWeight: 600 }}>{story.title}</span>
+                        {(story.attachments?.length || 0) > 0 && (
+                          <span className="attach-badge" title={`${story.attachments.length} adjunto(s)`}>
+                            <Paperclip size={11} />
+                            {story.attachments.length}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td>

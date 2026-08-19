@@ -1,8 +1,14 @@
 import Story from '../models/Story.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const getStories = async (req, res) => {
   try {
-    const { sprintId, epicId, status, assignedTo, backlog } = req.query;
+    const { sprintId, epicId, status, assignedTo, backlog, category } = req.query;
     const filter = {};
 
     if (backlog === 'true') {
@@ -13,6 +19,8 @@ export const getStories = async (req, res) => {
       if (status) filter.status = status;
       if (assignedTo) filter.assignedTo = assignedTo;
     }
+
+    if (category) filter.category = category;
 
     const stories = await Story.find(filter)
       .populate('epicId', 'title color')
@@ -50,6 +58,7 @@ export const createStory = async (req, res) => {
     const {
       title,
       description,
+      category,
       epicId,
       sprintId,
       assignedTo,
@@ -76,6 +85,7 @@ export const createStory = async (req, res) => {
     const story = await Story.create({
       title,
       description: description || '',
+      category: category || 'tarea',
       epicId: resolvedEpicId,
       sprintId: resolvedSprintId,
       assignedTo: resolvedAssignedTo,
@@ -111,6 +121,7 @@ export const updateStory = async (req, res) => {
     const allowedFields = [
       'title',
       'description',
+      'category',
       'status',
       'estimatedHours',
       'loggedHours',
@@ -199,8 +210,86 @@ export const deleteStory = async (req, res) => {
       return res.status(404).json({ message: 'Story not found' });
     }
 
+    const uploadDir = path.resolve(__dirname, '../../uploads');
+    if (story.attachments && story.attachments.length > 0) {
+      story.attachments.forEach((att) => {
+        const filePath = path.join(uploadDir, att.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      });
+    }
+
     await Story.findByIdAndDelete(req.params.id);
     return res.json({ message: 'Story deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const uploadAttachments = async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) {
+      return res.status(404).json({ message: 'Story not found' });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'No files uploaded' });
+    }
+
+    const imageMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+
+    const newAttachments = req.files.map((file) => ({
+      filename: file.filename,
+      originalName: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      url: `/uploads/${file.filename}`,
+      isImage: imageMimes.includes(file.mimetype)
+    }));
+
+    story.attachments.push(...newAttachments);
+    await story.save();
+
+    const updatedStory = await Story.findById(story._id)
+      .populate('epicId', 'title color')
+      .populate('sprintId', 'name status')
+      .populate('assignedTo', 'name email avatarColor');
+
+    return res.json(updatedStory);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteAttachment = async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) {
+      return res.status(404).json({ message: 'Story not found' });
+    }
+
+    const attachment = story.attachments.id(req.params.attachId);
+    if (!attachment) {
+      return res.status(404).json({ message: 'Attachment not found' });
+    }
+
+    const uploadDir = path.resolve(__dirname, '../../uploads');
+    const filePath = path.join(uploadDir, attachment.filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    story.attachments.pull(req.params.attachId);
+    await story.save();
+
+    const updatedStory = await Story.findById(story._id)
+      .populate('epicId', 'title color')
+      .populate('sprintId', 'name status')
+      .populate('assignedTo', 'name email avatarColor');
+
+    return res.json(updatedStory);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

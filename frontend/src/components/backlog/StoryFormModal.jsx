@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { boardService } from '../../services/boardService';
-import { X, Plus, Sparkles } from 'lucide-react';
+import { CATEGORY_OPTIONS, CATEGORY_CONFIG } from '../common/CategoryConfig';
+import { X, Plus } from 'lucide-react';
 
 export const StoryFormModal = ({ isOpen, epics = [], sprints = [], users = [], defaultSprintId = '', onClose, onStoryCreated }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    category: 'tarea',
     epicId: '',
     sprintId: defaultSprintId || '',
     assignedTo: '',
@@ -20,6 +22,7 @@ export const StoryFormModal = ({ isOpen, epics = [], sprints = [], users = [], d
       setFormData({
         title: '',
         description: '',
+        category: 'tarea',
         epicId: '',
         sprintId: defaultSprintId || '',
         assignedTo: '',
@@ -40,6 +43,7 @@ export const StoryFormModal = ({ isOpen, epics = [], sprints = [], users = [], d
       setFormData({
         title: '',
         description: '',
+        category: 'tarea',
         epicId: '',
         sprintId: defaultSprintId || '',
         assignedTo: '',
@@ -62,8 +66,12 @@ export const StoryFormModal = ({ isOpen, epics = [], sprints = [], users = [], d
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-title">
-            <Sparkles size={20} color="var(--accent-todo)" />
-            <span>Crear Nueva Historia de Usuario</span>
+            {(() => {
+              const cfg = CATEGORY_CONFIG[formData.category] || CATEGORY_CONFIG.tarea;
+              const Icon = cfg.icon;
+              return <Icon size={20} color={cfg.color} />;
+            })()}
+            <span>Crear Nueva Historia</span>
           </div>
           <button className="btn-icon" onClick={onClose}>
             <X size={18} />
@@ -71,6 +79,34 @@ export const StoryFormModal = ({ isOpen, epics = [], sprints = [], users = [], d
         </div>
 
         <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Categoría</label>
+            <div className="category-selector">
+              {CATEGORY_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = formData.category === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`category-option ${isSelected ? 'selected' : ''}`}
+                    style={{
+                      '--cat-color': opt.color,
+                      borderColor: isSelected ? opt.color : 'var(--border-color)',
+                      background: isSelected ? `${opt.color}18` : 'transparent'
+                    }}
+                    onClick={() => setFormData({ ...formData, category: opt.value })}
+                  >
+                    <Icon size={14} color={isSelected ? opt.color : 'var(--text-secondary)'} />
+                    <span style={{ color: isSelected ? opt.color : 'var(--text-secondary)' }}>
+                      {opt.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="form-label">Título de la Historia *</label>
             <input

@@ -1,5 +1,18 @@
 import mongoose from 'mongoose';
 
+const attachmentSchema = new mongoose.Schema(
+  {
+    filename: { type: String, required: true },
+    originalName: { type: String, required: true },
+    mimetype: { type: String, required: true },
+    size: { type: Number, required: true },
+    url: { type: String, required: true },
+    isImage: { type: Boolean, default: false },
+    uploadedAt: { type: Date, default: Date.now }
+  },
+  { _id: true }
+);
+
 const storySchema = new mongoose.Schema(
   {
     title: {
@@ -11,6 +24,11 @@ const storySchema = new mongoose.Schema(
       type: String,
       trim: true,
       default: ''
+    },
+    category: {
+      type: String,
+      enum: ['tarea', 'historia', 'hito', 'bug', 'mejora'],
+      default: 'tarea'
     },
     epicId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -65,6 +83,7 @@ const storySchema = new mongoose.Schema(
       type: Number,
       default: 0
     },
+    attachments: [attachmentSchema],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
@@ -78,6 +97,7 @@ const storySchema = new mongoose.Schema(
 storySchema.index({ sprintId: 1, status: 1 });
 storySchema.index({ epicId: 1 });
 storySchema.index({ assignedTo: 1 });
+storySchema.index({ category: 1 });
 
 const Story = mongoose.model('Story', storySchema);
 

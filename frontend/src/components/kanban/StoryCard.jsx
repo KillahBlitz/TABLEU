@@ -1,5 +1,6 @@
 import React from 'react';
-import { AlertOctagon, Clock, Layers, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertOctagon, Clock, Layers, Flame, ChevronLeft, ChevronRight, Paperclip } from 'lucide-react';
+import { CATEGORY_CONFIG } from '../common/CategoryConfig';
 
 export const StoryCard = ({
   story,
@@ -28,6 +29,10 @@ export const StoryCard = ({
     if (onDragStart) onDragStart(e, story);
   };
 
+  const catCfg = CATEGORY_CONFIG[story.category] || CATEGORY_CONFIG.tarea;
+  const CatIcon = catCfg.icon;
+  const attachCount = story.attachments?.length || 0;
+
   return (
     <div
       className={`story-card ${story.isBlocked ? 'blocked' : ''}`}
@@ -36,21 +41,34 @@ export const StoryCard = ({
       onClick={onClick}
     >
       <div className="story-card-top">
-        {story.epicId ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
           <span
-            className="epic-pill"
+            className="category-pill category-pill-compact"
             style={{
-              backgroundColor: `${story.epicId.color || '#00E5FF'}22`,
-              color: story.epicId.color || '#00E5FF',
-              border: `1px solid ${story.epicId.color || '#00E5FF'}44`
+              backgroundColor: `${catCfg.color}18`,
+              color: catCfg.color,
+              border: `1px solid ${catCfg.color}33`
             }}
+            title={catCfg.label}
           >
-            <Layers size={10} />
-            {story.epicId.title}
+            <CatIcon size={11} />
+            <span>{catCfg.label}</span>
           </span>
-        ) : (
-          <div />
-        )}
+
+          {story.epicId && (
+            <span
+              className="epic-pill"
+              style={{
+                backgroundColor: `${story.epicId.color || '#00E5FF'}22`,
+                color: story.epicId.color || '#00E5FF',
+                border: `1px solid ${story.epicId.color || '#00E5FF'}44`
+              }}
+            >
+              <Layers size={10} />
+              {story.epicId.title}
+            </span>
+          )}
+        </div>
 
         <span className={`priority-pill priority-${story.priority || 'medium'}`}>
           {story.priority || 'medium'}
@@ -81,6 +99,13 @@ export const StoryCard = ({
             <Clock size={12} />
             {story.loggedHours || 0}h / {story.estimatedHours || 0}h
           </span>
+
+          {attachCount > 0 && (
+            <span className="attach-badge" title={`${attachCount} adjunto(s)`}>
+              <Paperclip size={11} />
+              {attachCount}
+            </span>
+          )}
         </div>
 
         <div className="story-assignee">

@@ -15,3 +15,5 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 .system_generated/
+backend/uploads/*
+!backend/uploads/.gitkeep

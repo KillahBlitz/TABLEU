@@ -59,3 +59,23 @@
    - Created `attendance.css` with full dark palette integration (design tokens from `main.css`).
    - Added "Asistencias" tab in `Navbar.jsx` (admin-only, `ClipboardCheck` icon).
    - Added `/attendance` route in `App.jsx` protected with `adminOnly={true}`.
+10. **[2026-08-19] Story Categories & File Attachments:**
+    - **Story Categories:** Added `category` field to Story model with 5 types: `tarea` (🔧 Wrench, cyan), `historia` (📖 BookOpen, purple), `hito` (🏁 Flag, mint), `bug` (🐛 Bug, pink), `mejora` (✨ Sparkles, yellow).
+    - Created shared `CategoryConfig.jsx` with `CATEGORY_CONFIG`, `CATEGORY_OPTIONS`, and reusable `CategoryBadge` component.
+    - Added interactive category selector (color-coded buttons) to both `StoryFormModal.jsx` (create) and `StoryModal.jsx` (edit/detail).
+    - Category icon pill visible on `StoryCard.jsx` in Kanban board.
+    - Category column with icon and category filter dropdown added to `BacklogView.jsx` table.
+    - **File Attachments:** Added `attachments` array (embedded subdocument) to Story model with fields: `filename`, `originalName`, `mimetype`, `size`, `url`, `isImage`, `uploadedAt`.
+    - Installed `multer` and created `uploadMiddleware.js` (disk storage in `backend/uploads/`, 10 files max, 10MB each, image + doc mimetypes).
+    - Added `uploadAttachments` and `deleteAttachment` endpoints in `storyController.js`.
+    - Routes: `POST /stories/:id/attachments` and `DELETE /stories/:id/attachments/:attachId` in `storyRoutes.js`.
+    - Served `/uploads` as static directory in `server.js`.
+    - Added `upload` method (FormData) and `UPLOAD_BASE` helper to `api.js`.
+    - Added `uploadAttachments` and `deleteAttachment` to `boardService.js`.
+    - **Image Preview Grid:** Thumbnail grid with hover overlay (zoom + delete buttons) in `StoryModal.jsx`.
+    - **Lightbox:** Full-screen image viewer with prev/next navigation arrows and counter.
+    - **File List:** Non-image attachments shown as clickable file items with size badge and delete button.
+    - **Attachment Badge:** `📎 N` badge shown on `StoryCard.jsx` and `BacklogView.jsx` when attachments exist.
+    - Added `/uploads` proxy in `vite.config.js` for dev server.
+    - Added `backend/uploads/*` to `.gitignore` with `.gitkeep`.
+    - Full CSS added to `kanban.css`: `.category-pill`, `.category-selector`, `.category-option`, `.attach-badge`, `.attachments-section`, `.attachment-grid`, `.attachment-thumb`, `.attachment-lightbox`, `.lightbox-nav`, etc.
