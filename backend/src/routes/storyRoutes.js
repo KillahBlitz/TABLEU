@@ -7,11 +7,13 @@ import {
   updateStoryStatus,
   deleteStory,
   uploadAttachments,
+  getAttachmentFile,
+  downloadAttachment,
   deleteAttachment
 } from '../controllers/storyController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { requireAdmin } from '../middlewares/roleMiddleware.js';
-import { upload } from '../middlewares/uploadMiddleware.js';
+import { handleUpload } from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 
@@ -22,7 +24,9 @@ router.put('/:id', protect, updateStory);
 router.put('/:id/status', protect, updateStoryStatus);
 router.delete('/:id', protect, requireAdmin, deleteStory);
 
-router.post('/:id/attachments', protect, upload.array('files', 10), uploadAttachments);
+router.post('/:id/attachments', protect, handleUpload, uploadAttachments);
+router.get('/:id/attachments/:attachId/file', protect, getAttachmentFile);
+router.get('/:id/attachments/:attachId/download', protect, downloadAttachment);
 router.delete('/:id/attachments/:attachId', protect, deleteAttachment);
 
 export default router;

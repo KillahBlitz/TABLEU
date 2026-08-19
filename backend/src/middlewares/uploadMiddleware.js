@@ -26,32 +26,14 @@ const storage = multer.diskStorage({
   }
 });
 
-const allowedMimes = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'application/zip',
-  'application/x-rar-compressed',
-  'application/x-7z-compressed',
-  'text/plain',
-  'text/csv',
-  'application/json'
-];
+const blockedExtensions = ['.exe', '.bat', '.cmd', '.sh', '.vbs', '.msi', '.com', '.scr', '.pif'];
 
 const fileFilter = (_req, file, cb) => {
-  if (allowedMimes.includes(file.mimetype)) {
-    cb(null, true);
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (blockedExtensions.includes(ext)) {
+    cb(new Error(`Extension de archivo no permitida: ${ext}`), false);
   } else {
-    cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`), false);
+    cb(null, true);
   }
 };
 
@@ -59,7 +41,24 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024,
+    fileSize: 25 * 1024 * 1024,
     files: 10
   }
 });
+
+export const handleUpload = (req, res, next) => {
+  upload.array('files', 10)(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'El archivo excede el tamaño máximo permitido de 25MB' });
+      }
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ message: 'No puedes subir más de 10 archivos a la vez' });
+      }
+      return res.status(400).json({ message: `Error al subir archivo: ${err.message}` });
+    } else if (err) {
+      return res.status(400).json({ message: err.message || 'Error al procesar los archivos' });
+    }
+    next();
+  });
+};

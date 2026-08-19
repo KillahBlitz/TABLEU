@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { boardService } from '../../services/boardService';
-import { UPLOAD_BASE } from '../../services/api';
 import { CATEGORY_OPTIONS, CATEGORY_CONFIG } from '../common/CategoryConfig';
 import {
   X, Trash2, Check, AlertOctagon, Clock, User as UserIcon,
-  Tag, Flame, Paperclip, Image, FileText, Upload, ZoomIn, ChevronLeft, ChevronRight
+  Tag, Flame, Paperclip, Image, FileText, Upload, ZoomIn,
+  ChevronLeft, ChevronRight, Download, AlertCircle, Loader2
 } from 'lucide-react';
 
 export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = [], onClose, onStoryUpdated, onStoryDeleted }) => {
@@ -30,7 +30,9 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
 
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [uploadError, setUploadError] = useState(null);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [lightboxAttachment, setLightboxAttachment] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(-1);
 
   useEffect(() => {
@@ -51,10 +53,16 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
         blockedReason: story.blockedReason || ''
       });
       setAttachments(story.attachments || []);
+      setUploadError(null);
     }
   }, [story]);
 
-  const getFileUrl = (att) => `${UPLOAD_BASE}${att.url}`;
+  const getFileUrl = (att) => {
+    if (att._id && story?._id) {
+      return `/api/stories/${story._id}/attachments/${att._id}/file`;
+    }
+    return att.url || `/uploads/${att.filename}`;
+  };
 
   const imageAttachments = attachments.filter((a) => a.isImage);
   const fileAttachments = attachments.filter((a) => !a.isImage);
@@ -62,14 +70,14 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
   const openLightbox = (att) => {
     const idx = imageAttachments.findIndex((a) => a._id === att._id);
     setLightboxIndex(idx);
-    setLightboxUrl(getFileUrl(att));
+    setLightboxAttachment(att);
   };
 
   const navigateLightbox = (dir) => {
     const newIdx = lightboxIndex + dir;
     if (newIdx >= 0 && newIdx < imageAttachments.length) {
       setLightboxIndex(newIdx);
-      setLightboxUrl(getFileUrl(imageAttachments[newIdx]));
+      setLightboxAttachment(imageAttachments[newIdx]);
     }
   };
 
@@ -101,12 +109,13 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
     if (files.length === 0) return;
 
     setUploading(true);
+    setUploadError(null);
     try {
       const updated = await boardService.uploadAttachments(story._id, files);
       setAttachments(updated.attachments || []);
       if (onStoryUpdated) onStoryUpdated();
     } catch (error) {
-      console.error(error);
+      setUploadError(error.message || 'Error al subir los archivos');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -118,8 +127,23 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
       const updated = await boardService.deleteAttachment(story._id, attachmentId);
       setAttachments(updated.attachments || []);
       if (onStoryUpdated) onStoryUpdated();
+      if (lightboxAttachment && lightboxAttachment._id === attachmentId) {
+        setLightboxAttachment(null);
+        setLightboxIndex(-1);
+      }
     } catch (error) {
       console.error(error);
+    }
+  };
+
+  const handleDownload = async (att) => {
+    try {
+      setDownloadingId(att._id);
+      await boardService.downloadAttachment(story._id, att);
+    } catch (error) {
+      alert(error.message || 'No se pudo descargar el archivo');
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -366,7 +390,7 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
                   multiple
                   style={{ display: 'none' }}
                   onChange={handleFileSelect}
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.txt,.csv,.json"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.tar,.gz,.txt,.csv,.json,.xml,.md"
                 />
                 <button
                   type="button"
@@ -374,77 +398,144 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                 >
-                  <Upload size={13} />
-                  {uploading ? 'Subiendo...' : 'Adjuntar'}
+                  {uploading ? (
+                    <>
+                      <Loader2 size={13} className="spin-animation" />
+                      <span>Subiendo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={13} />
+                      <span>Adjuntar Archivos</span>
+                    </>
+                  )}
                 </button>
               </div>
 
+              {uploadError && (
+                <div className="attachment-error-banner">
+                  <AlertCircle size={14} />
+                  <span>{uploadError}</span>
+                </div>
+              )}
+
               {imageAttachments.length > 0 && (
-                <div className="attachment-grid">
-                  {imageAttachments.map((att) => (
-                    <div key={att._id} className="attachment-thumb">
-                      <img
-                        src={getFileUrl(att)}
-                        alt={att.originalName}
-                        onClick={() => openLightbox(att)}
-                      />
-                      <div className="attachment-thumb-overlay">
-                        <button
-                          type="button"
-                          className="attachment-action-btn zoom"
+                <div className="attachment-group-container">
+                  <div className="attachment-group-title">
+                    <Image size={14} />
+                    <span>Imágenes ({imageAttachments.length})</span>
+                  </div>
+                  <div className="attachment-grid">
+                    {imageAttachments.map((att) => (
+                      <div key={att._id} className="attachment-thumb">
+                        <img
+                          src={getFileUrl(att)}
+                          alt={att.originalName}
+                          onError={(e) => {
+                            if (!e.target.dataset.triedFallback) {
+                              e.target.dataset.triedFallback = 'true';
+                              e.target.src = att.url || `/uploads/${att.filename}`;
+                            }
+                          }}
                           onClick={() => openLightbox(att)}
-                          title="Vista previa"
-                        >
-                          <ZoomIn size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          className="attachment-action-btn delete"
-                          onClick={() => handleDeleteAttachment(att._id)}
-                          title="Eliminar"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        />
+                        <div className="attachment-thumb-overlay">
+                          <button
+                            type="button"
+                            className="attachment-action-btn zoom"
+                            onClick={() => openLightbox(att)}
+                            title="Vista previa"
+                          >
+                            <ZoomIn size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="attachment-action-btn download"
+                            onClick={() => handleDownload(att)}
+                            title="Descargar imagen"
+                            disabled={downloadingId === att._id}
+                          >
+                            {downloadingId === att._id ? <Loader2 size={14} className="spin-animation" /> : <Download size={14} />}
+                          </button>
+                          <button
+                            type="button"
+                            className="attachment-action-btn delete"
+                            onClick={() => handleDeleteAttachment(att._id)}
+                            title="Eliminar"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <span className="attachment-thumb-name" title={att.originalName}>
+                          {att.originalName}
+                        </span>
                       </div>
-                      <span className="attachment-thumb-name">{att.originalName}</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 
               {fileAttachments.length > 0 && (
-                <div className="attachment-file-list">
-                  {fileAttachments.map((att) => (
-                    <div key={att._id} className="attachment-file-item">
-                      <div className="attachment-file-info">
-                        <FileText size={16} color="var(--accent-todo)" />
-                        <a
-                          href={getFileUrl(att)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="attachment-file-name"
+                <div className="attachment-group-container" style={{ marginTop: imageAttachments.length > 0 ? '16px' : '0' }}>
+                  <div className="attachment-group-title">
+                    <FileText size={14} />
+                    <span>Documentos & Archivos ({fileAttachments.length})</span>
+                  </div>
+                  <div className="attachment-file-list">
+                    {fileAttachments.map((att) => (
+                      <div key={att._id} className="attachment-file-item">
+                        <div
+                          className="attachment-file-info"
+                          onClick={() => handleDownload(att)}
+                          style={{ cursor: 'pointer' }}
+                          title="Click para descargar"
                         >
-                          {att.originalName}
-                        </a>
-                        <span className="attachment-file-size">{formatFileSize(att.size)}</span>
+                          <FileText size={18} color="var(--accent-todo)" style={{ flexShrink: 0 }} />
+                          <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <span className="attachment-file-name">{att.originalName}</span>
+                            <span className="attachment-file-size">{formatFileSize(att.size)}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                            onClick={() => handleDownload(att)}
+                            disabled={downloadingId === att._id}
+                            title="Descargar documento"
+                          >
+                            {downloadingId === att._id ? (
+                              <Loader2 size={13} className="spin-animation" />
+                            ) : (
+                              <Download size={13} />
+                            )}
+                            <span>Descargar</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="attachment-action-btn delete small"
+                            onClick={() => handleDeleteAttachment(att._id)}
+                            title="Eliminar"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        className="attachment-action-btn delete small"
-                        onClick={() => handleDeleteAttachment(att._id)}
-                        title="Eliminar"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
 
               {attachments.length === 0 && (
                 <div className="attachments-empty">
                   <Image size={24} color="var(--text-muted)" />
-                  <span>Sin archivos adjuntos</span>
+                  <span>Sin archivos adjuntos en esta historia</span>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Puedes subir imágenes (PNG, JPG, SVG, WebP) y documentos (PDF, Word, Excel, ZIP)
+                  </span>
                 </div>
               )}
             </div>
@@ -474,35 +565,65 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
         </div>
       </div>
 
-      {lightboxUrl && (
-        <div className="attachment-lightbox" onClick={() => { setLightboxUrl(null); setLightboxIndex(-1); }}>
-          <button
-            className="lightbox-close"
-            onClick={() => { setLightboxUrl(null); setLightboxIndex(-1); }}
-          >
-            <X size={24} />
-          </button>
+      {lightboxAttachment && (
+        <div className="attachment-lightbox" onClick={() => { setLightboxAttachment(null); setLightboxIndex(-1); }}>
+          <div className="lightbox-top-bar" onClick={(e) => e.stopPropagation()}>
+            <div className="lightbox-file-name">
+              <Image size={16} color="var(--accent-todo)" />
+              <span>{lightboxAttachment.originalName}</span>
+              <span className="lightbox-file-size">({formatFileSize(lightboxAttachment.size)})</span>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => handleDownload(lightboxAttachment)}
+                title="Descargar imagen"
+              >
+                <Download size={14} />
+                <span>Descargar</span>
+              </button>
+
+              <button
+                className="lightbox-close"
+                onClick={() => { setLightboxAttachment(null); setLightboxIndex(-1); }}
+                title="Cerrar vista previa"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
 
           {lightboxIndex > 0 && (
             <button
               className="lightbox-nav lightbox-nav-prev"
               onClick={(e) => { e.stopPropagation(); navigateLightbox(-1); }}
+              title="Imagen anterior"
             >
               <ChevronLeft size={32} />
             </button>
           )}
 
-          <img
-            src={lightboxUrl}
-            alt="Vista previa"
-            className="lightbox-image"
-            onClick={(e) => e.stopPropagation()}
-          />
+          <div className="lightbox-image-wrapper" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={getFileUrl(lightboxAttachment)}
+              alt={lightboxAttachment.originalName}
+              className="lightbox-image"
+              onError={(e) => {
+                if (!e.target.dataset.triedFallback) {
+                  e.target.dataset.triedFallback = 'true';
+                  e.target.src = lightboxAttachment.url || `/uploads/${lightboxAttachment.filename}`;
+                }
+              }}
+            />
+          </div>
 
           {lightboxIndex < imageAttachments.length - 1 && (
             <button
               className="lightbox-nav lightbox-nav-next"
               onClick={(e) => { e.stopPropagation(); navigateLightbox(1); }}
+              title="Siguiente imagen"
             >
               <ChevronRight size={32} />
             </button>

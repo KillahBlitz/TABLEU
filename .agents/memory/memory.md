@@ -84,5 +84,16 @@
     - **Histogram Visualization:** Created `CategoryDistributionChart.jsx` rendering statistical histograms with "Frecuencia" on the Y-axis, axis tick marks, coordinate grid, contiguous colored category bars (`#00E5FF`, `#B388FF`, `#00FFCC`, `#FF007F`, `#FFEA00`), floating value bubbles, inner count badges, and "Categorías" on the X-axis with icons and pills.
     - **Filter & Responsive Layout:** Added developer filter dropdown to view all users or inspect a specific user's histogram individually.
     - **Integrated into Dashboard:** Rendered `CategoryDistributionChart` in `KpiDashboard.jsx`.
-    - **Backlog & Board Icons:** Configured category badges with icons and labels visible in `StoryCard.jsx` (Kanban Board) and `BacklogView.jsx` (Product Backlog table).
     - **CSS:** Added complete histogram styles to `kpi.css`.
+12. **[2026-08-19] Bugfix: Document Downloads & Image Preview Reliability:**
+    - **Backend:** Broadened upload filter in `uploadMiddleware.js` (accepts all image formats and document types, rejects only unsafe executables, increased size limit to 25MB). Added `handleUpload` error wrapper returning 400 JSON instead of crashing.
+    - **Download & File Endpoints:** Added `GET /api/stories/:id/attachments/:attachId/download` (`res.download(...)` preserving original filename) and `GET /api/stories/:id/attachments/:attachId/file` (`res.sendFile(...)` for direct inline rendering) in `storyController.js` and `storyRoutes.js`.
+    - **Image Detection:** Updated `uploadAttachments` to detect all image mime types (`image/*`) and file extensions (`jpg, jpeg, png, gif, webp, svg, bmp, ico, tiff, avif, heic`).
+    - **Frontend:** Added `downloadAttachment` (blob-based direct download with auth token without blank tabs) in `boardService.js`.
+    - **UI Enhancements (`StoryModal.jsx`):**
+      - Dedicated "Descargar" buttons with `Download` icon for both documents and images.
+      - Click on file info triggers direct download.
+      - Image grid with thumbnail rendering, `onError` fallback, zoom, download, and delete actions.
+      - Fullscreen Lightbox with top bar containing filename, filesize, and download button.
+      - Upload loading spinner and user-facing error banner.
+    - **CSS:** Added styles in `kanban.css` for `.attachment-group-container`, `.attachment-error-banner`, `.attachment-action-btn.download`, `.lightbox-top-bar`, and `.spin-animation`.

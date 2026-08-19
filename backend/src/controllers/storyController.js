@@ -238,16 +238,20 @@ export const uploadAttachments = async (req, res) => {
       return res.status(400).json({ message: 'No files uploaded' });
     }
 
-    const imageMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'];
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|tiff|avif|heic)$/i;
 
-    const newAttachments = req.files.map((file) => ({
-      filename: file.filename,
-      originalName: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      url: `/uploads/${file.filename}`,
-      isImage: imageMimes.includes(file.mimetype)
-    }));
+    const newAttachments = req.files.map((file) => {
+      const isMimeImage = typeof file.mimetype === 'string' && file.mimetype.startsWith('image/');
+      const isExtImage = imageExtensions.test(file.originalname);
+      return {
+        filename: file.filename,
+        originalName: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        url: `/uploads/${file.filename}`,
+        isImage: isMimeImage || isExtImage
+      };
+    });
 
     story.attachments.push(...newAttachments);
     await story.save();
@@ -258,6 +262,57 @@ export const uploadAttachments = async (req, res) => {
       .populate('assignedTo', 'name email avatarColor');
 
     return res.json(updatedStory);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const getAttachmentFile = async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) {
+      return res.status(404).json({ message: 'Story not found' });
+    }
+
+    const attachment = story.attachments.id(req.params.attachId);
+    if (!attachment) {
+      return res.status(404).json({ message: 'Attachment not found' });
+    }
+
+    const uploadDir = path.resolve(__dirname, '../../uploads');
+    const filePath = path.join(uploadDir, attachment.filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found on disk' });
+    }
+
+    res.setHeader('Content-Type', attachment.mimetype || 'application/octet-stream');
+    return res.sendFile(filePath);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const downloadAttachment = async (req, res) => {
+  try {
+    const story = await Story.findById(req.params.id);
+    if (!story) {
+      return res.status(404).json({ message: 'Story not found' });
+    }
+
+    const attachment = story.attachments.id(req.params.attachId);
+    if (!attachment) {
+      return res.status(404).json({ message: 'Attachment not found' });
+    }
+
+    const uploadDir = path.resolve(__dirname, '../../uploads');
+    const filePath = path.join(uploadDir, attachment.filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found on disk' });
+    }
+
+    return res.download(filePath, attachment.originalName);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
