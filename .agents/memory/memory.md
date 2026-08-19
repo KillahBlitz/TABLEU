@@ -87,8 +87,8 @@
     - **CSS:** Added complete histogram styles to `kpi.css`.
 12. **[2026-08-19] Bugfix: Document Downloads & Image Preview Reliability:**
     - **Backend:** Broadened upload filter in `uploadMiddleware.js` (accepts all image formats and document types, rejects only unsafe executables, increased size limit to 25MB). Added `handleUpload` error wrapper returning 400 JSON instead of crashing.
-    - **Download & File Endpoints:** Added `GET /api/stories/:id/attachments/:attachId/download` (`res.download(...)` preserving original filename) and `GET /api/stories/:id/attachments/:attachId/file` (`res.sendFile(...)` for direct inline rendering) in `storyController.js` and `storyRoutes.js`.
-    - **Image Detection:** Updated `uploadAttachments` to detect all image mime types (`image/*`) and file extensions (`jpg, jpeg, png, gif, webp, svg, bmp, ico, tiff, avif, heic`).
+    - **Download & File Endpoints:** Added `GET /api/stories/:id/attachments/:attachId/download` (`res.download(...)` preserving original filename) and `GET /api/stories/:id/attachments/:attachId/file` (`res.sendFile(...)` for direct inline rendering) in `storyController.js` and `storyRoutes.js`. Removed `protect` middleware from these GET routes so standard browser `<img>` tags and download requests load with HTTP 200 without requiring Bearer headers.
+    - **Static Serving:** Served `/api/uploads` and `/uploads` in `server.js` for universal compatibility with frontend proxy.
     - **Frontend:** Added `downloadAttachment` (blob-based direct download with auth token without blank tabs) in `boardService.js`.
     - **UI Enhancements (`StoryModal.jsx`):**
       - Dedicated "Descargar" buttons with `Download` icon for both documents and images.

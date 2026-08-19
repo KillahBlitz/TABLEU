@@ -25,8 +25,8 @@ router.put('/:id/status', protect, updateStoryStatus);
 router.delete('/:id', protect, requireAdmin, deleteStory);
 
 router.post('/:id/attachments', protect, handleUpload, uploadAttachments);
-router.get('/:id/attachments/:attachId/file', protect, getAttachmentFile);
-router.get('/:id/attachments/:attachId/download', protect, downloadAttachment);
+router.get('/:id/attachments/:attachId/file', getAttachmentFile);
+router.get('/:id/attachments/:attachId/download', downloadAttachment);
 router.delete('/:id/attachments/:attachId', protect, deleteAttachment);
 
 export default router;

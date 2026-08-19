@@ -248,7 +248,7 @@ export const uploadAttachments = async (req, res) => {
         originalName: file.originalname,
         mimetype: file.mimetype,
         size: file.size,
-        url: `/uploads/${file.filename}`,
+        url: `/api/uploads/${file.filename}`,
         isImage: isMimeImage || isExtImage
       };
     });
