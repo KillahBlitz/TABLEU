@@ -327,7 +327,14 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group">
-                <label className="form-label">Horas Estimadas</label>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>Horas Estimadas</span>
+                  {!isAdmin && (
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 400 }}>
+                      (Solo Admin)
+                    </span>
+                  )}
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -336,6 +343,8 @@ export const StoryModal = ({ isOpen, story, epics = [], sprints = [], users = []
                   value={formData.estimatedHours}
                   onChange={(e) => setFormData({ ...formData, estimatedHours: Number(e.target.value) })}
                   disabled={!isAdmin}
+                  style={!isAdmin ? { opacity: 0.65, cursor: 'not-allowed', background: 'rgba(255, 255, 255, 0.03)' } : {}}
+                  title={!isAdmin ? 'Solo los administradores pueden modificar la estimación de horas' : ''}
                 />
               </div>
 

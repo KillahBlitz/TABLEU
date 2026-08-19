@@ -122,3 +122,13 @@
       - Added detailed table with member info, job role, stories count, editable required hours input, actual covered hours, dynamic multi-colored progress bar, balance (surplus/remaining), and status badge (`Meta Cumplida`, `En Progreso`, `Sin Avance`).
       - Added sprint filter dropdown to analyze covered hours per sprint or globally.
     - **CSS:** Added styles in `attendance.css` for `.covered-hours-section`, `.covered-summary-metrics-grid`, `.covered-metric-card`, `.required-hours-input`, `.balance-pill`, and `.coverage-status-badge`.
+15. **[2026-08-19] Kanban Task Scrolling & Hours Permission Restrictions:**
+    - **Kanban Column Scrolling & Card Sizing:**
+      - Set `flex-shrink: 0` on `.story-card` so cards maintain full height and comfortable layout without squishing/compressing.
+      - Enabled smooth vertical scrolling on `.column-body` (`overflow-y: auto`, `min-height: 0`) with custom dark-themed scrollbars (`width: 6px`, thumb with hover state).
+      - Set `height: 100%` on `.kanban-column` inside a viewport-aligned grid (`height: calc(100vh - 180px)`, `min-height: 520px`).
+      - Added horizontal overflow protection on `.kanban-grid` (`minmax(280px, 1fr)`) so columns do not collapse on smaller screens.
+    - **Role-Based Hours Permissions (Developer vs Admin):**
+      - **Backend (`storyController.js`):** In `updateStory`, developers are restricted to editing `loggedHours`, `status`, `description`, `isBlocked`, and `blockedReason`. Any attempts to modify `estimatedHours`, `difficulty`, `priority`, or assignments by non-admins are filtered out and protected.
+      - **Frontend (`StoryModal.jsx`):** `Horas Estimadas` is disabled for developers with a `(Solo Admin)` label and read-only style, while `Horas Registradas / Invertidas` remains fully editable for logging actual time worked.
+

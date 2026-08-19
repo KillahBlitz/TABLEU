@@ -118,42 +118,60 @@ export const updateStory = async (req, res) => {
       return res.status(404).json({ message: 'Story not found' });
     }
 
-    const allowedFields = [
-      'title',
-      'description',
-      'category',
-      'status',
-      'estimatedHours',
-      'loggedHours',
-      'difficulty',
-      'priority',
-      'isBlocked',
-      'blockedReason',
-      'order'
-    ];
+    const isAdmin = req.user && req.user.role === 'admin';
 
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) {
-        story[field] = req.body[field];
+    if (isAdmin) {
+      const adminFields = [
+        'title',
+        'description',
+        'category',
+        'status',
+        'estimatedHours',
+        'loggedHours',
+        'difficulty',
+        'priority',
+        'isBlocked',
+        'blockedReason',
+        'order'
+      ];
+
+      adminFields.forEach((field) => {
+        if (req.body[field] !== undefined) {
+          story[field] = req.body[field];
+        }
+      });
+
+      if (req.body.assignedTo !== undefined) {
+        story.assignedTo = (req.body.assignedTo && typeof req.body.assignedTo === 'object')
+          ? req.body.assignedTo._id
+          : (req.body.assignedTo || null);
       }
-    });
 
-    if (req.body.assignedTo !== undefined) {
-      story.assignedTo = (req.body.assignedTo && typeof req.body.assignedTo === 'object')
-        ? req.body.assignedTo._id
-        : (req.body.assignedTo || null);
-    }
+      if (req.body.epicId !== undefined) {
+        story.epicId = (req.body.epicId && typeof req.body.epicId === 'object')
+          ? req.body.epicId._id
+          : (req.body.epicId || null);
+      }
 
-    if (req.body.epicId !== undefined) {
-      story.epicId = (req.body.epicId && typeof req.body.epicId === 'object')
-        ? req.body.epicId._id
-        : (req.body.epicId || null);
-    }
+      if (req.body.sprintId !== undefined) {
+        story.sprintId = (req.body.sprintId && typeof req.body.sprintId === 'object')
+          ? req.body.sprintId._id
+          : (req.body.sprintId || null);
+      }
+    } else {
+      const devFields = [
+        'description',
+        'status',
+        'loggedHours',
+        'isBlocked',
+        'blockedReason'
+      ];
 
-    if (req.body.sprintId !== undefined) {
-      story.sprintId = (req.body.sprintId && typeof req.body.sprintId === 'object')
-        ? req.body.sprintId._id
-        : (req.body.sprintId || null);
+      devFields.forEach((field) => {
+        if (req.body[field] !== undefined) {
+          story[field] = req.body[field];
+        }
+      });
     }
 
     await story.save();
