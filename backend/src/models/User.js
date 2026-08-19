@@ -28,6 +28,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'devRH'
     },
+    requiredHours: {
+      type: Number,
+      default: 40,
+      min: 0
+    },
     avatarColor: {
       type: String,
       default: '#00E5FF'

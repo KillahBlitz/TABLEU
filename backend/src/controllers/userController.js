@@ -33,7 +33,7 @@ export const deleteUser = async (req, res) => {
 
 export const updateUserRole = async (req, res) => {
   try {
-    const { jobRole, role } = req.body;
+    const { jobRole, role, requiredHours } = req.body;
     const user = await User.findById(req.params.id);
 
     if (!user) {
@@ -46,6 +46,10 @@ export const updateUserRole = async (req, res) => {
 
     if (role !== undefined) {
       user.role = role;
+    }
+
+    if (requiredHours !== undefined) {
+      user.requiredHours = Math.max(0, Number(requiredHours) || 0);
     }
 
     await user.save();

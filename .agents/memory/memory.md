@@ -110,3 +110,15 @@
       - Added "Asignar Rol (Catálogo)" column with real-time dropdown selector in `UserPerformanceTable.jsx` (Table View).
       - Added role selector and `JobRoleBadge` to Developer Histogram Cards (`dev-histogram-card`).
     - **CSS:** Added styles in `kpi.css` for `.job-role-badge`, `.job-role-select-wrapper`, `.job-role-select`, and `.role-loader`.
+14. **[2026-08-19] Covered Hours Module in Attendance (Horas Cubiertas):**
+    - **Backend:**
+      - Added `requiredHours` (default: 40) field to `User` schema in `User.js`.
+      - Added `GET /api/attendance/covered-hours` in `attendanceController.js` and `attendanceRoutes.js` (computes total required hours, actual hours logged from stories, percentage covered, remaining/surplus hours, and goal completion status).
+      - Added `PUT /api/attendance/required-hours` and updated `updateUserRole` in `userController.js` to modify `requiredHours`.
+    - **Frontend:**
+      - Added `getCoveredHours()` and `updateRequiredHours()` in `attendanceService.js`.
+      - Added "Horas Cubiertas" view mode in `AttendanceDashboard.jsx` alongside "Diario" and "Resumen".
+      - Added summary metrics cards: Total Horas Requeridas, Horas Cubiertas (Historias), Cobertura Global (%), y Metas Cumplidas.
+      - Added detailed table with member info, job role, stories count, editable required hours input, actual covered hours, dynamic multi-colored progress bar, balance (surplus/remaining), and status badge (`Meta Cumplida`, `En Progreso`, `Sin Avance`).
+      - Added sprint filter dropdown to analyze covered hours per sprint or globally.
+    - **CSS:** Added styles in `attendance.css` for `.covered-hours-section`, `.covered-summary-metrics-grid`, `.covered-metric-card`, `.required-hours-input`, `.balance-pill`, and `.coverage-status-badge`.

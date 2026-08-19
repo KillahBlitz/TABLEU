@@ -8,5 +8,13 @@ export const attendanceService = {
   bulkMark: (records) => api.post('/attendance/bulk', { records }),
 
   getSummary: (startDate, endDate) =>
-    api.get(`/attendance/summary?startDate=${startDate}&endDate=${endDate}`)
+    api.get(`/attendance/summary?startDate=${startDate}&endDate=${endDate}`),
+
+  getCoveredHours: (params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return api.get(`/attendance/covered-hours${query ? `?${query}` : ''}`);
+  },
+
+  updateRequiredHours: (userId, requiredHours) =>
+    api.put('/attendance/required-hours', { userId, requiredHours })
 };

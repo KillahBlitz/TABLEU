@@ -462,6 +462,202 @@
   gap: 10px;
 }
 
+.covered-hours-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.covered-hours-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: var(--bg-columns);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.covered-summary-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.covered-metric-card {
+  background: var(--bg-columns);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.covered-metric-card:hover {
+  transform: translateY(-2px);
+}
+
+.covered-metric-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.covered-metric-card.accent-todo::before { background: var(--accent-todo); }
+.covered-metric-card.accent-done::before { background: var(--accent-done); }
+.covered-metric-card.accent-progress::before { background: var(--accent-in-progress); }
+.covered-metric-card.accent-purple::before { background: var(--accent-purple); }
+
+.covered-metric-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.covered-metric-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.covered-metric-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.covered-metric-icon.todo {
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--accent-todo);
+}
+
+.covered-metric-icon.done {
+  background: rgba(0, 255, 204, 0.12);
+  color: var(--accent-done);
+}
+
+.covered-metric-icon.progress {
+  background: rgba(255, 145, 0, 0.12);
+  color: var(--accent-in-progress);
+}
+
+.covered-metric-icon.purple {
+  background: rgba(179, 136, 255, 0.12);
+  color: var(--accent-purple);
+}
+
+.covered-metric-value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: #FFFFFF;
+}
+
+.covered-metric-sub {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.required-hours-edit-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.required-hours-input {
+  width: 65px;
+  background: rgba(24, 24, 24, 0.85);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--accent-todo);
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 5px 8px;
+  text-align: right;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.required-hours-input:focus {
+  border-color: var(--accent-todo);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+
+.hours-unit-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.balance-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.balance-pill.surplus {
+  background: rgba(0, 255, 204, 0.15);
+  color: var(--accent-done);
+  border: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.balance-pill.remaining {
+  background: rgba(255, 145, 0, 0.15);
+  color: var(--accent-in-progress);
+  border: 1px solid rgba(255, 145, 0, 0.3);
+}
+
+.coverage-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.coverage-status-badge.met {
+  background: rgba(0, 255, 204, 0.15);
+  color: var(--accent-done);
+  border: 1px solid rgba(0, 255, 204, 0.3);
+}
+
+.coverage-status-badge.progress {
+  background: rgba(0, 229, 255, 0.15);
+  color: var(--accent-todo);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+.coverage-status-badge.pending {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -480,6 +676,10 @@
     grid-template-columns: 1fr;
   }
 
+  .covered-summary-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
   .attendance-header {
     flex-direction: column;
     align-items: flex-start;
@@ -493,3 +693,4 @@
     font-size: 0.8rem;
   }
 }
+
