@@ -362,18 +362,12 @@ export const SitemapNode = ({
 
             <div
               className="sitemap-node-image-body"
-              onClick={() => onImageClick && onImageClick(node)}
+              onClick={() => !isConnectingMode && onImageClick && onImageClick(node)}
             >
               {currentImageUrl ? (
                 <>
-                  {!imageLoaded && !imageError && (
-                    <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Loader2 size={24} className="spin-animation" color="var(--accent-todo)" />
-                    </div>
-                  )}
-
                   {imageError ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', color: 'var(--accent-blocked)', padding: '16px', textAlign: 'center' }}>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: 'var(--accent-blocked)', padding: '16px', textAlign: 'center' }}>
                       <AlertTriangle size={24} />
                       <span style={{ fontSize: '0.75rem' }}>No se pudo cargar la imagen</span>
                       <button
@@ -400,6 +394,12 @@ export const SitemapNode = ({
                       onError={handleImageError}
                     />
                   )}
+
+                  {!imageLoaded && !imageError && (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+                      <Loader2 size={24} className="spin-animation" color="var(--accent-todo)" />
+                    </div>
+                  )}
                 </>
               ) : (
                 <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
@@ -413,7 +413,7 @@ export const SitemapNode = ({
                   title="Ampliar vista"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onImageClick && onImageClick(node);
+                    if (!isConnectingMode) onImageClick && onImageClick(node);
                   }}
                 >
                   <Maximize2 size={16} />

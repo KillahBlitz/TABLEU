@@ -160,6 +160,11 @@
 18. **[2026-08-21] UI Polish: Floating Outer Handles & Multi-Candidate Image Fallback:**
     - **Floating Outer Handles:** Moved connection circles (`.sitemap-handle`) outside the card border (`top: -15px`, `bottom: -15px`, `left: -15px`, `right: -15px`) and separated card clipping into inner `.sitemap-node-card` (`overflow: visible` on `.sitemap-node`), preventing any handle truncation. Adjusted Bezier connection endpoints in `SitemapEdge.jsx` to meet floating outer circles precisely.
     - **Multi-Candidate Image Fallback:** Added progressive fallback URL resolution (`candidateUrls`) in `SitemapNode.jsx` attempting proxy, static `/uploads/`, direct backend port, and `/api/sitemap/image/:filename` endpoint to ensure 100% reliable image display across all network/proxy setups.
+19. **[2026-08-21] Bugfix 2ª ronda: SVG Coordinate Offset & Image Absolute Positioning:**
+    - **Root cause of invisible arrows:** `.sitemap-svg-layer` was positioned at `top: -10000px; left: -10000px; width: 20000px; height: 20000px`. SVG coordinate (x, y) maps to CSS position (x-10000, y-10000) in the transform plane, placing all edges 10000px off-screen. Fixed by changing to `top: 0; left: 0; width: 100%; height: 100%; overflow: visible` — SVG and canvas coordinates now align 1:1.
+    - **Root cause of invisible images:** `.sitemap-node-img` used `height: 100%` as a flex item inside a container with `align-items: center`. In some scenarios `height: 100%` doesn't resolve in flex cross-axis with non-stretch alignment. Fixed by making the img `position: absolute; inset: 0; width: 100%; height: 100%` so it fills the image-body container directly, bypassing flex quirks.
+    - **Lightbox during connecting mode:** Clicking on an image node to finish a connection was also opening the lightbox. Fixed by adding `!isConnectingMode` guard on `onClick` in `.sitemap-node-image-body` and the overlay expand button.
+    - **Spinner z-index:** Moved spinner DOM order AFTER the img element and added `zIndex: 1` so it renders on top of the absolutely-positioned img while loading.
 
 
 

@@ -53,10 +53,11 @@
 
 .sitemap-svg-layer {
   position: absolute;
-  top: -10000px;
-  left: -10000px;
-  width: 20000px;
-  height: 20000px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
   z-index: 2;
 }
@@ -281,6 +282,9 @@
 }
 
 .sitemap-node-img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
