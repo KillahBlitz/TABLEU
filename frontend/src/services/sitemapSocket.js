@@ -3,22 +3,12 @@ import { io } from 'socket.io-client';
 let _socket = null;
 const _queue = [];
 
-const getSocketOrigin = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  if (apiUrl && apiUrl.startsWith('http')) {
-    try {
-      return new URL(apiUrl).origin;
-    } catch (_) {}
-  }
-  return window.location.origin;
-};
-
 export const connectSitemapSocket = () => {
   if (_socket) return _socket;
 
   const token = localStorage.getItem('tableu_token');
 
-  _socket = io(getSocketOrigin(), {
+  _socket = io(window.location.origin, {
     auth: { token },
     transports: ['websocket', 'polling'],
     reconnectionDelay: 1000,
