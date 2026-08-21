@@ -6,6 +6,7 @@ import { SitemapLightbox } from './SitemapLightbox';
 import { SitemapLibraryDrawer } from './SitemapLibraryDrawer';
 import {
   getSitemap,
+  updateSitemap,
   uploadSitemapImage,
   clearSitemap as apiClearSitemap
 } from '../../services/sitemapService';
@@ -39,9 +40,33 @@ export const SitemapView = () => {
   const panRef = useRef({ x: 0, y: 0 });
   const zoomRef = useRef(1);
   const lastCursorEmitRef = useRef(0);
+  const saveTimeoutRef = useRef(null);
+  const nodesRef = useRef([]);
+  const edgesRef = useRef([]);
+  const libraryRef = useRef([]);
 
   useEffect(() => { panRef.current = pan; }, [pan]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+  useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
+  useEffect(() => { libraryRef.current = library; }, [library]);
+
+  const triggerAutoSave = useCallback(() => {
+    if (!isAdmin) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await updateSitemap({
+          nodes: nodesRef.current,
+          edges: edgesRef.current,
+          library: libraryRef.current,
+          viewport: { ...panRef.current, zoom: zoomRef.current }
+        });
+      } catch (err) {
+        console.error('Auto-save error:', err);
+      }
+    }, 1500);
+  }, [isAdmin]);
 
   useEffect(() => {
     const fetchSitemapData = async () => {
@@ -243,6 +268,7 @@ export const SitemapView = () => {
 
       emitOp('sitemap:node:upsert', newNode);
       emitOp('sitemap:library:upsert', libItem);
+      triggerAutoSave();
 
       setPasteToast('¡Imagen agregada al sitemap!');
       setTimeout(() => setPasteToast(null), 3000);
@@ -251,7 +277,7 @@ export const SitemapView = () => {
       setPasteToast('Error al procesar la imagen');
       setTimeout(() => setPasteToast(null), 3000);
     }
-  }, [isAdmin]);
+  }, [isAdmin, triggerAutoSave]);
 
   const addScreenNodeFromLibrary = useCallback((item, targetPos = null) => {
     if (!isAdmin) return;
@@ -283,10 +309,11 @@ export const SitemapView = () => {
     setNodes((prev) => [...prev, newNode]);
     setSelectedId(newNode.id);
     emitOp('sitemap:node:upsert', newNode);
+    triggerAutoSave();
 
     setPasteToast('¡Pantalla añadida al mapa!');
     setTimeout(() => setPasteToast(null), 2500);
-  }, [isAdmin]);
+  }, [isAdmin, triggerAutoSave]);
 
   const handleUploadScreensToLibrary = useCallback(async (items) => {
     if (!isAdmin || !items || items.length === 0) return;
@@ -307,16 +334,18 @@ export const SitemapView = () => {
       setLibrary((prev) => [clean, ...prev.filter((l) => l.id !== clean.id)]);
       emitOp('sitemap:library:upsert', clean);
     });
+    triggerAutoSave();
 
     setPasteToast(`¡${uploaded.length} pantalla(s) subida(s) a la galería!`);
     setTimeout(() => setPasteToast(null), 3000);
-  }, [isAdmin]);
+  }, [isAdmin, triggerAutoSave]);
 
   const handleDeleteFromLibrary = useCallback((libId) => {
     if (!isAdmin) return;
     setLibrary((prev) => prev.filter((l) => l.id !== libId));
     emitOp('sitemap:library:delete', { id: libId });
-  }, [isAdmin]);
+    triggerAutoSave();
+  }, [isAdmin, triggerAutoSave]);
 
   useEffect(() => {
     const handlePaste = (e) => {
@@ -440,6 +469,7 @@ export const SitemapView = () => {
     setNodes((prev) => [...prev, newNote]);
     setSelectedId(newNote.id);
     emitOp('sitemap:node:upsert', newNote);
+    triggerAutoSave();
   };
 
   const handleUpdateNode = (id, updates) => {
@@ -450,6 +480,7 @@ export const SitemapView = () => {
       if (updatedNode) emitOp('sitemap:node:upsert', updatedNode);
       return updatedNodes;
     });
+    triggerAutoSave();
   };
 
   const handleDeleteNode = (id) => {
@@ -458,6 +489,7 @@ export const SitemapView = () => {
     setEdges((prev) => prev.filter((e) => e.fromNodeId !== id && e.toNodeId !== id));
     if (selectedId === id) setSelectedId(null);
     emitOp('sitemap:node:delete', { id });
+    triggerAutoSave();
   };
 
   const handleDeleteEdge = (id) => {
@@ -465,6 +497,7 @@ export const SitemapView = () => {
     setEdges((prev) => prev.filter((e) => e.id !== id));
     if (selectedId === id) setSelectedId(null);
     emitOp('sitemap:edge:delete', { id });
+    triggerAutoSave();
   };
 
   const handleDeleteSelected = () => {
@@ -501,6 +534,7 @@ export const SitemapView = () => {
       };
       setEdges((prev) => [...prev, newEdge]);
       emitOp('sitemap:edge:upsert', newEdge);
+      triggerAutoSave();
     }
 
     setConnectingSource(null);
