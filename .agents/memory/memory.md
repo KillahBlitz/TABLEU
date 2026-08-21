@@ -148,5 +148,15 @@
       - `SitemapToolbar.jsx`: Glassmorphic floating control bar with zoom tools, creation actions, neon color pickers, save indicator, and role badges.
       - `SitemapLightbox.jsx`: Fullscreen image viewer with direct image download and zoom inspection.
       - `sitemap.css`: Complete styling integrating TABLEU's cyber-dark design tokens.
+17. **[2026-08-21] Bugfix: Sitemap Arrow Connecting & Image Rendering:**
+    - **Image Rendering Fix:**
+      - Corrected `uploadMiddleware.js` disk storage filename generation to deduce and enforce valid file extensions (`.png`, `.jpg`, `.webp`, `.svg`) directly from `file.mimetype` when pasting raw image blobs with missing original filenames.
+      - Provided automatic fallback `File` construction with `pasted_image_${Date.now()}.png` in `SitemapView.jsx` and `sitemapService.js`.
+      - Enhanced image node rendering in `SitemapNode.jsx` with automatic aspect ratio detection on load, loading spinners, and error boundary fallbacks.
+    - **Arrow Connecting Fix:**
+      - Refactored `SitemapCanvas.jsx` and `SitemapNode.jsx` connection event handlers to support both click-to-connect and drag-and-drop connecting gestures.
+      - Added magnetic target node highlighting (`is-connecting-target` neon glow) during connection mode.
+      - Defined global SVG neon arrowhead markers in `SitemapCanvas.jsx` and dynamic marker referencing in `SitemapEdge.jsx`.
+
 
 

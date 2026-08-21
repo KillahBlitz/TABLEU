@@ -17,11 +17,18 @@ const storage = multer.diskStorage({
   },
   filename: (_req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    const safeName = file.originalname
-      .replace(ext, '')
-      .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 60);
+    let ext = path.extname(file.originalname || '');
+    if (!ext && file.mimetype) {
+      if (file.mimetype === 'image/png') ext = '.png';
+      else if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') ext = '.jpg';
+      else if (file.mimetype === 'image/webp') ext = '.webp';
+      else if (file.mimetype === 'image/svg+xml') ext = '.svg';
+      else if (file.mimetype === 'image/gif') ext = '.gif';
+      else if (file.mimetype.startsWith('image/')) ext = `.${file.mimetype.split('/')[1]}`;
+    }
+    if (!ext) ext = '.png';
+    const rawName = (file.originalname || 'image').replace(path.extname(file.originalname || ''), '');
+    const safeName = rawName.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 60) || 'image';
     cb(null, `${safeName}-${uniqueSuffix}${ext}`);
   }
 });

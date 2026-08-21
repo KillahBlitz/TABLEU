@@ -3,9 +3,10 @@ import {
   Trash2,
   Maximize2,
   Palette,
-  Eye,
   FileText,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { UPLOAD_BASE } from '../../services/api';
 
@@ -23,23 +24,39 @@ export const SitemapNode = ({
   node,
   isSelected,
   isConnectingSource,
+  isConnectingTarget,
+  isConnectingMode,
   isAdmin,
   zoom,
   onSelect,
   onUpdate,
   onDelete,
   onStartConnection,
+  onFinishConnection,
   onImageClick
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const nodeRef = useRef(null);
 
   const handlePointerDown = (e) => {
     e.stopPropagation();
+
+    if (isConnectingMode && !isConnectingSource) {
+      onFinishConnection(node.id, 'auto');
+      return;
+    }
+
     onSelect(node.id);
 
     if (!isAdmin) return;
-    if (e.target.closest('.sitemap-handle') || e.target.closest('.sitemap-resize-handle') || e.target.closest('.sitemap-node-action-btn') || e.target.closest('.sitemap-color-popover')) {
+    if (
+      e.target.closest('.sitemap-handle') ||
+      e.target.closest('.sitemap-resize-handle') ||
+      e.target.closest('.sitemap-node-action-btn') ||
+      e.target.closest('.sitemap-color-popover')
+    ) {
       return;
     }
 
@@ -125,21 +142,49 @@ export const SitemapNode = ({
     window.addEventListener('pointerup', handlePointerUp);
   };
 
-  const handleStartConnect = (e, handle) => {
+  const handleHandleAction = (e, handle) => {
     e.stopPropagation();
     if (!isAdmin) return;
-    onStartConnection(node.id, handle);
+
+    if (isConnectingMode && !isConnectingSource) {
+      onFinishConnection(node.id, handle);
+    } else {
+      onStartConnection(node.id, handle);
+    }
   };
 
+  const resolveImageUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
+      return url;
+    }
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${UPLOAD_BASE}${cleanPath}`;
+  };
+
+  const imageUrl = resolveImageUrl(node.imageUrl);
   const isDarkNote = node.color === '#1E1E28';
-  const imageUrl = node.imageUrl?.startsWith('http')
-    ? node.imageUrl
-    : `${UPLOAD_BASE}${node.imageUrl}`;
+
+  const handleImageLoad = (e) => {
+    setImageLoaded(true);
+    setImageError(false);
+    const nw = e.target.naturalWidth;
+    const nh = e.target.naturalHeight;
+    if (nw && nh && (!node.width || !node.height || node.height === 220)) {
+      const ratio = nh / nw;
+      const targetW = Math.min(Math.max(node.width || 300, 240), 540);
+      const targetH = Math.round(targetW * ratio) + 36;
+      if (Math.abs(targetH - (node.height || 180)) > 20) {
+        onUpdate(node.id, { width: targetW, height: targetH });
+      }
+    }
+  };
 
   return (
     <div
       ref={nodeRef}
-      className={`sitemap-node ${node.type === 'image' ? 'sitemap-node-image' : 'sitemap-node-note'} ${isDarkNote ? 'theme-dark' : ''} ${isSelected ? 'is-selected' : ''} ${isConnectingSource ? 'is-connecting-source' : ''}`}
+      data-node-id={node.id}
+      className={`sitemap-node ${node.type === 'image' ? 'sitemap-node-image' : 'sitemap-node-note'} ${isDarkNote ? 'theme-dark' : ''} ${isSelected ? 'is-selected' : ''} ${isConnectingSource ? 'is-connecting-source' : ''} ${isConnectingTarget ? 'is-connecting-target' : ''}`}
       style={{
         transform: `translate3d(${node.x}px, ${node.y}px, 0)`,
         width: `${node.width || 260}px`,
@@ -153,23 +198,23 @@ export const SitemapNode = ({
         <>
           <div
             className="sitemap-handle handle-top"
-            onPointerDown={(e) => handleStartConnect(e, 'top')}
-            title="Conectar hacia arriba"
+            onPointerDown={(e) => handleHandleAction(e, 'top')}
+            title="Conectar por arriba"
           />
           <div
             className="sitemap-handle handle-right"
-            onPointerDown={(e) => handleStartConnect(e, 'right')}
-            title="Conectar hacia la derecha"
+            onPointerDown={(e) => handleHandleAction(e, 'right')}
+            title="Conectar por la derecha"
           />
           <div
             className="sitemap-handle handle-bottom"
-            onPointerDown={(e) => handleStartConnect(e, 'bottom')}
-            title="Conectar hacia abajo"
+            onPointerDown={(e) => handleHandleAction(e, 'bottom')}
+            title="Conectar por abajo"
           />
           <div
             className="sitemap-handle handle-left"
-            onPointerDown={(e) => handleStartConnect(e, 'left')}
-            title="Conectar hacia la izquierda"
+            onPointerDown={(e) => handleHandleAction(e, 'left')}
+            title="Conectar por la izquierda"
           />
         </>
       )}
@@ -252,7 +297,7 @@ export const SitemapNode = ({
       ) : (
         <>
           <div className="sitemap-node-image-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1 }}>
               <ImageIcon size={13} color="var(--accent-todo)" />
               {isAdmin ? (
                 <input
@@ -288,12 +333,39 @@ export const SitemapNode = ({
             className="sitemap-node-image-body"
             onClick={() => onImageClick && onImageClick(node)}
           >
-            <img
-              src={imageUrl}
-              alt={node.title || 'Sitemap Screen'}
-              className="sitemap-node-img"
-              loading="lazy"
-            />
+            {imageUrl ? (
+              <>
+                {!imageLoaded && !imageError && (
+                  <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Loader2 size={24} className="spin-animation" color="var(--accent-todo)" />
+                  </div>
+                )}
+
+                {imageError ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', color: 'var(--accent-blocked)', padding: '16px', textAlign: 'center' }}>
+                    <AlertTriangle size={24} />
+                    <span style={{ fontSize: '0.75rem' }}>No se pudo cargar la imagen</span>
+                  </div>
+                ) : (
+                  <img
+                    src={imageUrl}
+                    alt={node.title || 'Sitemap Screen'}
+                    className="sitemap-node-img"
+                    loading="eager"
+                    onLoad={handleImageLoad}
+                    onError={() => {
+                      setImageError(true);
+                      setImageLoaded(true);
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                Sin imagen
+              </div>
+            )}
+
             <div className="sitemap-node-img-overlay">
               <button
                 className="sitemap-overlay-btn"

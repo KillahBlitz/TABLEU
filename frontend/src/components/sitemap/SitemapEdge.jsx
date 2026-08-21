@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 
-export const getHandleCoordinates = (node, handle = 'auto', targetNode = null) => {
+export const getHandleCoordinates = (node, handle = 'auto', otherNode = null) => {
   if (!node) return { x: 0, y: 0 };
   const w = node.width || 260;
   const h = node.height || 180;
@@ -13,16 +13,16 @@ export const getHandleCoordinates = (node, handle = 'auto', targetNode = null) =
   if (handle === 'left') return { x: node.x, y: cy };
   if (handle === 'right') return { x: node.x + w, y: cy };
 
-  if (targetNode) {
-    const tcx = targetNode.x + (targetNode.width || 260) / 2;
-    const tcy = targetNode.y + (targetNode.height || 180) / 2;
-    const dx = tcx - cx;
-    const dy = tcy - cy;
+  if (otherNode) {
+    const ocx = otherNode.x + (otherNode.width || 260) / 2;
+    const ocy = otherNode.y + (otherNode.height || 180) / 2;
+    const dx = ocx - cx;
+    const dy = ocy - cy;
 
     if (Math.abs(dx) >= Math.abs(dy)) {
-      return dx > 0 ? { x: node.x + w, y: cy } : { x: node.x, y: cy };
+      return dx >= 0 ? { x: node.x + w, y: cy } : { x: node.x, y: cy };
     } else {
-      return dy > 0 ? { x: cx, y: node.y + h } : { x: cx, y: node.y };
+      return dy >= 0 ? { x: cx, y: node.y + h } : { x: cx, y: node.y };
     }
   }
 
@@ -33,21 +33,20 @@ export const computeBezierPath = (sourcePos, targetPos) => {
   const dx = targetPos.x - sourcePos.x;
   const dy = targetPos.y - sourcePos.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
-  const curvature = Math.max(40, Math.min(dist * 0.35, 180));
+  const curvature = Math.max(35, Math.min(dist * 0.35, 140));
 
-  let cx1, cy1, cx2, cy2;
+  let cx1 = sourcePos.x;
+  let cy1 = sourcePos.y;
+  let cx2 = targetPos.x;
+  let cy2 = targetPos.y;
 
-  if (Math.abs(dx) > Math.abs(dy)) {
+  if (Math.abs(dx) >= Math.abs(dy)) {
     const sign = dx >= 0 ? 1 : -1;
     cx1 = sourcePos.x + curvature * sign;
-    cy1 = sourcePos.y;
     cx2 = targetPos.x - curvature * sign;
-    cy2 = targetPos.y;
   } else {
     const sign = dy >= 0 ? 1 : -1;
-    cx1 = sourcePos.x;
     cy1 = sourcePos.y + curvature * sign;
-    cx2 = targetPos.x;
     cy2 = targetPos.y - curvature * sign;
   }
 
@@ -57,6 +56,10 @@ export const computeBezierPath = (sourcePos, targetPos) => {
   const path = `M ${sourcePos.x} ${sourcePos.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${targetPos.x} ${targetPos.y}`;
 
   return { path, midX, midY };
+};
+
+export const getMarkerId = (color = '#00E5FF') => {
+  return `arrow-marker-${color.replace('#', '')}`;
 };
 
 export const SitemapEdge = ({
@@ -75,7 +78,7 @@ export const SitemapEdge = ({
   const { path, midX, midY } = computeBezierPath(sourcePos, targetPos);
 
   const neonColor = edge.color || '#00E5FF';
-  const markerId = `arrow-${neonColor.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const markerId = getMarkerId(neonColor);
 
   return (
     <g
@@ -86,24 +89,6 @@ export const SitemapEdge = ({
       }}
       style={{ '--edge-glow-color': neonColor }}
     >
-      <defs>
-        <marker
-          id={markerId}
-          viewBox="0 0 10 10"
-          refX="6"
-          refY="5"
-          markerWidth="7"
-          markerHeight="7"
-          orient="auto-start-reverse"
-        >
-          <path
-            d="M 0 1 L 9 5 L 0 9 z"
-            fill={neonColor}
-            style={{ filter: `drop-shadow(0 0 3px ${neonColor})` }}
-          />
-        </marker>
-      </defs>
-
       <path
         d={path}
         className="sitemap-edge-hitbox"
@@ -116,7 +101,7 @@ export const SitemapEdge = ({
         strokeWidth="1.8"
         markerEnd={`url(#${markerId})`}
         style={{
-          filter: `drop-shadow(0 0 4px ${neonColor}) drop-shadow(0 0 8px ${neonColor}88)`
+          filter: `drop-shadow(0 0 3px ${neonColor}) drop-shadow(0 0 6px ${neonColor}99)`
         }}
       />
 
@@ -129,7 +114,7 @@ export const SitemapEdge = ({
             onDelete && onDelete(edge.id);
           }}
         >
-          <circle r="12" fill="#181822" stroke="var(--accent-blocked)" strokeWidth="1.5" />
+          <circle r="12" fill="#181824" stroke="var(--accent-blocked)" strokeWidth="1.5" />
           <g transform="translate(-6, -6)">
             <Trash2 size={12} color="var(--accent-blocked)" />
           </g>

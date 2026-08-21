@@ -123,6 +123,12 @@
   box-shadow: 0 0 0 2px var(--accent-done), 0 0 20px rgba(0, 255, 204, 0.4) !important;
 }
 
+.sitemap-node.is-connecting-target {
+  box-shadow: 0 0 0 2px var(--accent-done), 0 0 24px rgba(0, 255, 204, 0.6) !important;
+  cursor: pointer !important;
+  transform-origin: center center;
+}
+
 .sitemap-node-note {
   display: flex;
   flex-direction: column;

@@ -149,34 +149,55 @@ export const SitemapView = () => {
         return;
       }
 
-      const items = e.clipboardData?.items;
-      if (!items) return;
-
-      for (let i = 0; i < items.length; i++) {
-        if (items[i].type.indexOf('image') !== -1) {
-          const blob = items[i].getAsFile();
-          if (blob) {
-            e.preventDefault();
-            const container = document.querySelector('.sitemap-view-container');
-            let targetPos = null;
-
-            if (container) {
-              const rect = container.getBoundingClientRect();
-              const clientX = mousePosRef.current.x;
-              const clientY = mousePosRef.current.y;
-
-              if (clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
-                targetPos = {
-                  x: (clientX - rect.left - pan.x) / zoom - 150,
-                  y: (clientY - rect.top - pan.y) / zoom - 110
-                };
-              }
-            }
-
-            processImageUpload(blob, targetPos);
+      let imageBlob = null;
+      if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
+        for (let i = 0; i < e.clipboardData.files.length; i++) {
+          if (e.clipboardData.files[i].type.startsWith('image/')) {
+            imageBlob = e.clipboardData.files[i];
             break;
           }
         }
+      }
+
+      if (!imageBlob && e.clipboardData?.items) {
+        for (let i = 0; i < e.clipboardData.items.length; i++) {
+          const item = e.clipboardData.items[i];
+          if (item.type.indexOf('image') !== -1) {
+            imageBlob = item.getAsFile();
+            if (imageBlob) break;
+          }
+        }
+      }
+
+      if (imageBlob) {
+        e.preventDefault();
+        const container = document.querySelector('.sitemap-view-container');
+        let targetPos = null;
+
+        if (container) {
+          const rect = container.getBoundingClientRect();
+          const clientX = mousePosRef.current.x;
+          const clientY = mousePosRef.current.y;
+
+          if (
+            clientX >= rect.left &&
+            clientX <= rect.right &&
+            clientY >= rect.top &&
+            clientY <= rect.bottom
+          ) {
+            targetPos = {
+              x: (clientX - rect.left - pan.x) / zoom - 150,
+              y: (clientY - rect.top - pan.y) / zoom - 110
+            };
+          }
+        }
+
+        const fileName = imageBlob.name || `pasted_image_${Date.now()}.png`;
+        const fileToUpload = new File([imageBlob], fileName, {
+          type: imageBlob.type || 'image/png'
+        });
+
+        processImageUpload(fileToUpload, targetPos);
       }
     };
 
@@ -317,12 +338,12 @@ export const SitemapView = () => {
     }
   };
 
-  const handleStartConnection = (nodeId, handle) => {
+  const handleStartConnection = (nodeId, handle = 'auto') => {
     if (!isAdmin) return;
     setConnectingSource({ nodeId, handle });
   };
 
-  const handleFinishConnection = (targetNodeId) => {
+  const handleFinishConnection = (targetNodeId, targetHandle = 'auto') => {
     if (!isAdmin || !connectingSource || connectingSource.nodeId === targetNodeId) {
       setConnectingSource(null);
       return;
@@ -338,7 +359,7 @@ export const SitemapView = () => {
         fromNodeId: connectingSource.nodeId,
         toNodeId: targetNodeId,
         fromHandle: connectingSource.handle || 'auto',
-        toHandle: 'auto',
+        toHandle: targetHandle || 'auto',
         color: currentArrowColor || '#00E5FF',
         style: 'curved'
       };
@@ -426,6 +447,7 @@ export const SitemapView = () => {
         saveStatus={saveStatus}
         selectedId={selectedId}
         currentArrowColor={currentArrowColor}
+        isConnecting={!!connectingSource}
         onZoomIn={() => setZoom((z) => Math.min(z * 1.15, 3.5))}
         onZoomOut={() => setZoom((z) => Math.max(z * 0.85, 0.15))}
         onResetZoom={handleResetZoom}
@@ -458,7 +480,10 @@ export const SitemapView = () => {
         onFinishConnection={handleFinishConnection}
         onCancelConnection={() => setConnectingSource(null)}
         onImageClick={(node) => setLightboxNode(node)}
-        onCanvasClick={() => setSelectedId(null)}
+        onCanvasClick={() => {
+          setSelectedId(null);
+          setConnectingSource(null);
+        }}
       />
 
       {isDraggingFile && (

@@ -10,7 +10,8 @@ export const updateSitemap = async (data) => {
 
 export const uploadSitemapImage = async (file) => {
   const formData = new FormData();
-  formData.append('files', file);
+  const filename = file.name || `image_${Date.now()}.png`;
+  formData.append('files', file, filename);
   return await api.upload('/sitemap/upload', formData);
 };
 
