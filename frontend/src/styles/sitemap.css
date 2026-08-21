@@ -122,6 +122,7 @@
   align-items: flex-start;
   gap: 2px;
   pointer-events: none;
+  z-index: 30;
   will-change: left, top;
   transition: left 0.08s linear, top 0.08s linear;
 }

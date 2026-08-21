@@ -1,9 +1,10 @@
 import { io } from 'socket.io-client';
 
 let _socket = null;
+const _queue = [];
 
 export const connectSitemapSocket = () => {
-  if (_socket?.connected) return _socket;
+  if (_socket) return _socket;
 
   const token = localStorage.getItem('tableu_token');
 
@@ -14,6 +15,13 @@ export const connectSitemapSocket = () => {
     reconnectionAttempts: 10
   });
 
+  _socket.on('connect', () => {
+    while (_queue.length) {
+      const { event, data } = _queue.shift();
+      _socket.emit(event, data);
+    }
+  });
+
   return _socket;
 };
 
@@ -21,7 +29,9 @@ export const getSitemapSocket = () => _socket;
 
 export const emitOp = (event, data) => {
   const socket = getSitemapSocket();
-  if (socket?.connected) socket.emit(event, data);
+  if (!socket) return;
+  if (socket.connected) socket.emit(event, data);
+  else _queue.push({ event, data });
 };
 
 export const disconnectSitemapSocket = () => {

@@ -55,7 +55,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sitemap:node:upsert', async (node) => {
-    if (!isAdmin()) return;
+    if (!isAdmin()) {
+      socket.emit('sitemap:error', { code: 'UNAUTHORIZED', message: 'Admin role required' });
+      return;
+    }
     try {
       const updated = await Sitemap.findOneAndUpdate(
         { key: 'main', 'nodes.id': node.id },
@@ -70,18 +73,25 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sitemap:node:delete', async ({ id }) => {
-    if (!isAdmin()) return;
+    if (!isAdmin()) {
+      socket.emit('sitemap:error', { code: 'UNAUTHORIZED', message: 'Admin role required' });
+      return;
+    }
     try {
       await Sitemap.findOneAndUpdate(
         { key: 'main' },
-        { $pull: { nodes: { id }, edges: { $or: [{ fromNodeId: id }, { toNodeId: id }] } } }
+        { $pull: { nodes: { id }, edges: { $or: [{ fromNodeId: id }, { toNodeId: id }] } } },
+        { upsert: true }
       );
       socket.to('sitemap-room').emit('sitemap:node:delete', { id });
     } catch (err) { console.error('node:delete', err.message); }
   });
 
   socket.on('sitemap:edge:upsert', async (edge) => {
-    if (!isAdmin()) return;
+    if (!isAdmin()) {
+      socket.emit('sitemap:error', { code: 'UNAUTHORIZED', message: 'Admin role required' });
+      return;
+    }
     try {
       const updated = await Sitemap.findOneAndUpdate(
         { key: 'main', 'edges.id': edge.id },
@@ -96,15 +106,21 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sitemap:edge:delete', async ({ id }) => {
-    if (!isAdmin()) return;
+    if (!isAdmin()) {
+      socket.emit('sitemap:error', { code: 'UNAUTHORIZED', message: 'Admin role required' });
+      return;
+    }
     try {
-      await Sitemap.findOneAndUpdate({ key: 'main' }, { $pull: { edges: { id } } });
+      await Sitemap.findOneAndUpdate({ key: 'main' }, { $pull: { edges: { id } } }, { upsert: true });
       socket.to('sitemap-room').emit('sitemap:edge:delete', { id });
     } catch (err) { console.error('edge:delete', err.message); }
   });
 
   socket.on('sitemap:library:upsert', async (item) => {
-    if (!isAdmin()) return;
+    if (!isAdmin()) {
+      socket.emit('sitemap:error', { code: 'UNAUTHORIZED', message: 'Admin role required' });
+      return;
+    }
     try {
       const updated = await Sitemap.findOneAndUpdate(
         { key: 'main', 'library.id': item.id },
@@ -119,16 +135,34 @@ io.on('connection', (socket) => {
   });
 
   socket.on('sitemap:library:delete', async ({ id }) => {
-    if (!isAdmin()) return;
+    if (!isAdmin()) {
+      socket.emit('sitemap:error', { code: 'UNAUTHORIZED', message: 'Admin role required' });
+      return;
+    }
     try {
-      await Sitemap.findOneAndUpdate({ key: 'main' }, { $pull: { library: { id } } });
+      await Sitemap.findOneAndUpdate({ key: 'main' }, { $pull: { library: { id } } }, { upsert: true });
       socket.to('sitemap-room').emit('sitemap:library:delete', { id });
     } catch (err) { console.error('library:delete', err.message); }
   });
 
+  socket.on('sitemap:clear', async () => {
+    if (!isAdmin()) {
+      socket.emit('sitemap:error', { code: 'UNAUTHORIZED', message: 'Admin role required' });
+      return;
+    }
+    try {
+      await Sitemap.findOneAndUpdate(
+        { key: 'main' },
+        { $set: { nodes: [], edges: [] } },
+        { upsert: true }
+      );
+      socket.to('sitemap-room').emit('sitemap:updated', { nodes: [], edges: [] });
+    } catch (err) { console.error('sitemap:clear', err.message); }
+  });
+
   socket.on('sitemap:viewport', async (viewport) => {
     try {
-      await Sitemap.findOneAndUpdate({ key: 'main' }, { $set: { viewport } });
+      await Sitemap.findOneAndUpdate({ key: 'main' }, { $set: { viewport } }, { upsert: true });
     } catch (_) {}
   });
 

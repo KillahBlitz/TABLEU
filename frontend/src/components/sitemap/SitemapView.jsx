@@ -44,6 +44,7 @@ export const SitemapView = () => {
   const nodesRef = useRef([]);
   const edgesRef = useRef([]);
   const libraryRef = useRef([]);
+  const isInitialMount = useRef(true);
 
   useEffect(() => { panRef.current = pan; }, [pan]);
   useEffect(() => { zoomRef.current = zoom; }, [zoom]);
@@ -69,27 +70,12 @@ export const SitemapView = () => {
   }, [isAdmin]);
 
   useEffect(() => {
-    const fetchSitemapData = async () => {
-      try {
-        const data = await getSitemap();
-        if (data) {
-          setNodes(data.nodes || []);
-          setEdges(data.edges || []);
-          setLibrary(data.library || []);
-          if (data.viewport) {
-            setPan({ x: data.viewport.x || 0, y: data.viewport.y || 0 });
-            setZoom(data.viewport.zoom || 1);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching sitemap:', error);
-      }
-    };
-    fetchSitemapData();
-  }, []);
-
-  useEffect(() => {
+    let alive = true;
     const socket = connectSitemapSocket();
+
+    const handleConnect = () => {
+      console.log('[sitemap] socket connected:', socket.id);
+    };
 
     const handleNodeUpsert = (node) => {
       setNodes((prev) => {
@@ -147,7 +133,6 @@ export const SitemapView = () => {
     };
 
     const handleCursor = (data) => {
-      console.log('[sitemap:cursor]', data.socketId, data.name, data.x, data.y);
       setRemoteCursors((prev) => ({
         ...prev,
         [data.socketId]: { name: data.name, color: data.color || '#00E5FF', x: data.x, y: data.y }
@@ -162,6 +147,11 @@ export const SitemapView = () => {
       });
     };
 
+    const handleSocketError = ({ message }) => {
+      console.error('[socket error]', message);
+    };
+
+    socket.on('connect', handleConnect);
     socket.on('sitemap:node:upsert', handleNodeUpsert);
     socket.on('sitemap:node:delete', handleNodeDelete);
     socket.on('sitemap:edge:upsert', handleEdgeUpsert);
@@ -171,8 +161,24 @@ export const SitemapView = () => {
     socket.on('sitemap:updated', handleSitemapUpdated);
     socket.on('sitemap:cursor', handleCursor);
     socket.on('sitemap:cursor:leave', handleCursorLeave);
+    socket.on('sitemap:error', handleSocketError);
+
+    getSitemap().then((data) => {
+      if (!alive || !data) return;
+      setNodes(data.nodes || []);
+      setEdges(data.edges || []);
+      setLibrary(data.library || []);
+      if (data.viewport) {
+        setPan({ x: data.viewport.x || 0, y: data.viewport.y || 0 });
+        setZoom(data.viewport.zoom || 1);
+      }
+    }).catch((error) => {
+      console.error('Error fetching sitemap:', error);
+    });
 
     return () => {
+      alive = false;
+      socket.off('connect', handleConnect);
       socket.off('sitemap:node:upsert', handleNodeUpsert);
       socket.off('sitemap:node:delete', handleNodeDelete);
       socket.off('sitemap:edge:upsert', handleEdgeUpsert);
@@ -182,11 +188,13 @@ export const SitemapView = () => {
       socket.off('sitemap:updated', handleSitemapUpdated);
       socket.off('sitemap:cursor', handleCursor);
       socket.off('sitemap:cursor:leave', handleCursorLeave);
+      socket.off('sitemap:error', handleSocketError);
       disconnectSitemapSocket();
     };
   }, []);
 
   useEffect(() => {
+    if (isInitialMount.current) { isInitialMount.current = false; return; }
     const timeout = setTimeout(() => {
       emitOp('sitemap:viewport', { ...pan, zoom });
     }, 1500);
@@ -549,6 +557,7 @@ export const SitemapView = () => {
       setConnectingSource(null);
       try {
         await apiClearSitemap();
+        emitOp('sitemap:clear', {});
       } catch (err) {
         console.error(err);
       }
