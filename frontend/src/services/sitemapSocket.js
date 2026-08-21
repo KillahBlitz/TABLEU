@@ -6,11 +6,8 @@ export const connectSitemapSocket = () => {
   if (_socket?.connected) return _socket;
 
   const token = localStorage.getItem('tableu_token');
-  const origin = import.meta.env.VITE_API_URL
-    ? new URL(import.meta.env.VITE_API_URL).origin
-    : window.location.origin;
 
-  _socket = io(origin, {
+  _socket = io(window.location.origin, {
     auth: { token },
     transports: ['websocket', 'polling'],
     reconnectionDelay: 1000,
@@ -21,6 +18,11 @@ export const connectSitemapSocket = () => {
 };
 
 export const getSitemapSocket = () => _socket;
+
+export const emitOp = (event, data) => {
+  const socket = getSitemapSocket();
+  if (socket?.connected) socket.emit(event, data);
+};
 
 export const disconnectSitemapSocket = () => {
   if (_socket) {

@@ -56,14 +56,6 @@ export const updateSitemap = async (req, res) => {
     const populated = await Sitemap.findById(sitemap._id)
       .populate('updatedBy', 'name email avatarColor');
 
-    getIO()?.to('sitemap-room').emit('sitemap:updated', {
-      nodes: populated.nodes,
-      edges: populated.edges,
-      library: populated.library,
-      viewport: populated.viewport,
-      updatedBy: populated.updatedBy
-    });
-
     return res.json(populated);
   } catch (error) {
     return res.status(500).json({ message: error.message });

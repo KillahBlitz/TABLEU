@@ -2,12 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
 import { seedInitialAdmins, seedInitialRoles } from './config/seeder.js';
 import { setIO } from './socket.js';
+import Sitemap from './models/Sitemap.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
@@ -27,22 +29,107 @@ const app = express();
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+  maxHttpBufferSize: 5e6
 });
 
 setIO(io);
 
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (token) {
+    try {
+      socket.user = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (_) {}
+  }
+  next();
+});
+
 io.on('connection', (socket) => {
   socket.join('sitemap-room');
 
+  const isAdmin = () => socket.user?.role === 'admin';
+
   socket.on('sitemap:cursor', (data) => {
-    socket.to('sitemap-room').emit('sitemap:cursor', {
-      ...data,
-      socketId: socket.id
-    });
+    socket.to('sitemap-room').emit('sitemap:cursor', { ...data, socketId: socket.id });
+  });
+
+  socket.on('sitemap:node:upsert', async (node) => {
+    if (!isAdmin()) return;
+    try {
+      const updated = await Sitemap.findOneAndUpdate(
+        { key: 'main', 'nodes.id': node.id },
+        { $set: { 'nodes.$': node } },
+        { new: true }
+      );
+      if (!updated) {
+        await Sitemap.findOneAndUpdate({ key: 'main' }, { $push: { nodes: node } }, { upsert: true });
+      }
+      socket.to('sitemap-room').emit('sitemap:node:upsert', node);
+    } catch (err) { console.error('node:upsert', err.message); }
+  });
+
+  socket.on('sitemap:node:delete', async ({ id }) => {
+    if (!isAdmin()) return;
+    try {
+      await Sitemap.findOneAndUpdate(
+        { key: 'main' },
+        { $pull: { nodes: { id }, edges: { $or: [{ fromNodeId: id }, { toNodeId: id }] } } }
+      );
+      socket.to('sitemap-room').emit('sitemap:node:delete', { id });
+    } catch (err) { console.error('node:delete', err.message); }
+  });
+
+  socket.on('sitemap:edge:upsert', async (edge) => {
+    if (!isAdmin()) return;
+    try {
+      const updated = await Sitemap.findOneAndUpdate(
+        { key: 'main', 'edges.id': edge.id },
+        { $set: { 'edges.$': edge } },
+        { new: true }
+      );
+      if (!updated) {
+        await Sitemap.findOneAndUpdate({ key: 'main' }, { $push: { edges: edge } }, { upsert: true });
+      }
+      socket.to('sitemap-room').emit('sitemap:edge:upsert', edge);
+    } catch (err) { console.error('edge:upsert', err.message); }
+  });
+
+  socket.on('sitemap:edge:delete', async ({ id }) => {
+    if (!isAdmin()) return;
+    try {
+      await Sitemap.findOneAndUpdate({ key: 'main' }, { $pull: { edges: { id } } });
+      socket.to('sitemap-room').emit('sitemap:edge:delete', { id });
+    } catch (err) { console.error('edge:delete', err.message); }
+  });
+
+  socket.on('sitemap:library:upsert', async (item) => {
+    if (!isAdmin()) return;
+    try {
+      const updated = await Sitemap.findOneAndUpdate(
+        { key: 'main', 'library.id': item.id },
+        { $set: { 'library.$': item } },
+        { new: true }
+      );
+      if (!updated) {
+        await Sitemap.findOneAndUpdate({ key: 'main' }, { $push: { library: item } }, { upsert: true });
+      }
+      socket.to('sitemap-room').emit('sitemap:library:upsert', item);
+    } catch (err) { console.error('library:upsert', err.message); }
+  });
+
+  socket.on('sitemap:library:delete', async ({ id }) => {
+    if (!isAdmin()) return;
+    try {
+      await Sitemap.findOneAndUpdate({ key: 'main' }, { $pull: { library: { id } } });
+      socket.to('sitemap-room').emit('sitemap:library:delete', { id });
+    } catch (err) { console.error('library:delete', err.message); }
+  });
+
+  socket.on('sitemap:viewport', async (viewport) => {
+    try {
+      await Sitemap.findOneAndUpdate({ key: 'main' }, { $set: { viewport } });
+    } catch (_) {}
   });
 
   socket.on('disconnect', () => {

@@ -20,10 +20,8 @@ const COLOR_OPTIONS = [
 
 const buildImageUrl = (rawUrl) => {
   if (!rawUrl) return null;
-  if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl.startsWith('http')) {
-    return rawUrl;
-  }
-  if (rawUrl.startsWith('/api/sitemap/image/')) return rawUrl;
+  if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl.startsWith('http')) return rawUrl;
+  if (rawUrl.startsWith('/api/sitemap/image/') || rawUrl.startsWith('/api/uploads/') || rawUrl.startsWith('/uploads/')) return rawUrl;
   const filename = rawUrl.split('/').pop();
   return `/api/sitemap/image/${filename}`;
 };
@@ -47,11 +45,11 @@ export const SitemapNode = ({
   const [imgError, setImgError] = useState(false);
   const nodeRef = useRef(null);
 
-  const imageUrl = buildImageUrl(node.imageUrl);
+  const imageUrl = buildImageUrl(node.serverUrl || node.imageUrl);
 
   useEffect(() => {
     setImgError(false);
-  }, [node.imageUrl]);
+  }, [node.serverUrl, node.imageUrl]);
 
   const handlePointerDown = (e) => {
     e.stopPropagation();
