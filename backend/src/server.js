@@ -2,9 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import { connectDB } from './config/db.js';
 import { seedInitialAdmins, seedInitialRoles } from './config/seeder.js';
+import { setIO } from './socket.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
@@ -21,6 +24,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const httpServer = createServer(app);
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+setIO(io);
+
+io.on('connection', (socket) => {
+  socket.join('sitemap-room');
+
+  socket.on('sitemap:cursor', (data) => {
+    socket.to('sitemap-room').emit('sitemap:cursor', {
+      ...data,
+      socketId: socket.id
+    });
+  });
+
+  socket.on('disconnect', () => {
+    io.to('sitemap-room').emit('sitemap:cursor:leave', { socketId: socket.id });
+  });
+});
 
 app.use(cors());
 app.use(express.json());
@@ -48,7 +76,7 @@ const startServer = async () => {
   await connectDB();
   await seedInitialRoles();
   await seedInitialAdmins();
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`TABLEU Server running on port ${PORT}`);
   });
 };

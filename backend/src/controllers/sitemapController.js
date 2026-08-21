@@ -2,6 +2,7 @@ import Sitemap from '../models/Sitemap.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import { getIO } from '../socket.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -54,6 +55,13 @@ export const updateSitemap = async (req, res) => {
 
     const populated = await Sitemap.findById(sitemap._id)
       .populate('updatedBy', 'name email avatarColor');
+
+    getIO()?.to('sitemap-room').emit('sitemap:updated', {
+      nodes: populated.nodes,
+      edges: populated.edges,
+      viewport: populated.viewport,
+      updatedBy: populated.updatedBy
+    });
 
     return res.json(populated);
   } catch (error) {
@@ -120,6 +128,13 @@ export const clearSitemap = async (req, res) => {
     sitemap.edges = [];
     sitemap.updatedBy = req.user._id;
     await sitemap.save();
+
+    getIO()?.to('sitemap-room').emit('sitemap:updated', {
+      nodes: [],
+      edges: [],
+      viewport: sitemap.viewport,
+      updatedBy: req.user._id
+    });
 
     return res.json({ message: 'Sitemap cleared successfully', sitemap });
   } catch (error) {
