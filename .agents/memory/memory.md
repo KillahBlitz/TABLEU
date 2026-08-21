@@ -131,4 +131,22 @@
     - **Role-Based Hours Permissions (Developer vs Admin):**
       - **Backend (`storyController.js`):** In `updateStory`, developers are restricted to editing `loggedHours`, `status`, `description`, `isBlocked`, and `blockedReason`. Any attempts to modify `estimatedHours`, `difficulty`, `priority`, or assignments by non-admins are filtered out and protected.
       - **Frontend (`StoryModal.jsx`):** `Horas Estimadas` is disabled for developers with a `(Solo Admin)` label and read-only style, while `Horas Registradas / Invertidas` remains fully editable for logging actual time worked.
+16. **[2026-08-21] SITEMAP Interactive Canvas Module:**
+    - **Navigation & Placement:** Added "Sitemap" (`Network` icon) in `Navbar.jsx` located after Backlog and before KPIs & Métricas. Accessible by all authenticated roles via `/sitemap` in `App.jsx`.
+    - **Role-Based Permissions:**
+      - **Developers (Non-Admin):** Can pan, zoom, view notes/screens, and click images to open high-resolution fullscreen lightbox. Canvas movement/editing, resizing, image pasting, node/edge deletion, and note editing are disabled. Read-only badge displayed in toolbar.
+      - **Admins:** Full control to paste images (`Ctrl+V` / `Cmd+V`), upload files, drag & drop images, create writing blocks (sticky notes), resize elements with corner/edge handles, drag and reposition nodes in canvas coordinates, connect nodes with thin glowing neon arrows, customize arrow & note colors, delete elements, clear map, and save state.
+    - **Backend Architecture:**
+      - **Mongoose Model (`Sitemap.js`):** Schema storing `nodes` (`id`, `type`, `x`, `y`, `width`, `height`, `content`, `imageUrl`, `title`, `color`, `zIndex`), `edges` (`id`, `fromNodeId`, `toNodeId`, `fromHandle`, `toHandle`, `color`, `style`), `viewport` (`x`, `y`, `zoom`), and `updatedBy`.
+      - **Controller (`sitemapController.js`):** `getSitemap` (authenticated), `updateSitemap` (admin only), `uploadSitemapImage` (admin only with multer upload), `clearSitemap` (admin only).
+      - **Routes (`sitemapRoutes.js`):** Mounted at `/api/sitemap` in `server.js`.
+    - **Frontend Components & Aesthetics:**
+      - `SitemapView.jsx`: Main view coordinating state, clipboard paste listener, drag-and-drop file upload, debounced auto-save, and keyboard shortcuts (`Delete`, `Escape`).
+      - `SitemapCanvas.jsx`: 2D transform canvas with infinite grid pattern, smooth cursor-centered wheel zoom, background pan, SVG neon edge rendering layer, and DOM nodes layer.
+      - `SitemapNode.jsx`: Image cards and color-themed writing blocks with live drag, 8-point resize handles, and 4-way connection ports (`top`, `right`, `bottom`, `left`).
+      - `SitemapEdge.jsx`: SVG thin neon Bezier curves (`1.8px`) with SVG glow filter (`#00E5FF`, `#B388FF`, `#00FFCC`, `#FF007F`, `#FFE600`), sleek arrowhead markers, and admin deletion badge.
+      - `SitemapToolbar.jsx`: Glassmorphic floating control bar with zoom tools, creation actions, neon color pickers, save indicator, and role badges.
+      - `SitemapLightbox.jsx`: Fullscreen image viewer with direct image download and zoom inspection.
+      - `sitemap.css`: Complete styling integrating TABLEU's cyber-dark design tokens.
+
 

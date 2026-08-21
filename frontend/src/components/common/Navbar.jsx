@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { RoleBadge } from './RoleBadge';
-import { Kanban, ListTodo, BarChart3, LogOut, Layers, ClipboardCheck } from 'lucide-react';
+import { Kanban, ListTodo, BarChart3, LogOut, Layers, ClipboardCheck, Network } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, logout, isAdmin } = useAuth();
@@ -47,6 +47,14 @@ export const Navbar = () => {
           >
             <ListTodo size={16} />
             <span>Backlog</span>
+          </NavLink>
+
+          <NavLink
+            to="/sitemap"
+            className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}
+          >
+            <Network size={16} />
+            <span>Sitemap</span>
           </NavLink>
 
           {isAdmin && (

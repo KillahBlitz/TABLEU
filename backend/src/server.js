@@ -13,6 +13,7 @@ import sprintRoutes from './routes/sprintRoutes.js';
 import storyRoutes from './routes/storyRoutes.js';
 import kpiRoutes from './routes/kpiRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
+import sitemapRoutes from './routes/sitemapRoutes.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/sprints', sprintRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/kpis', kpiRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/sitemap', sitemapRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'TABLEU API', timestamp: new Date() });
