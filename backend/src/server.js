@@ -10,6 +10,7 @@ import { connectDB } from './config/db.js';
 import { seedInitialAdmins, seedInitialRoles } from './config/seeder.js';
 import { setIO } from './socket.js';
 import Sitemap from './models/Sitemap.js';
+import User from './models/User.js';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
@@ -35,11 +36,13 @@ const io = new Server(httpServer, {
 
 setIO(io);
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth?.token;
   if (token) {
     try {
-      socket.user = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const user = await User.findById(decoded.id).select('name email role avatarColor').lean();
+      if (user) socket.user = user;
     } catch (_) {}
   }
   next();

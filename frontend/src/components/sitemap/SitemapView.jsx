@@ -482,12 +482,9 @@ export const SitemapView = () => {
 
   const handleUpdateNode = (id, updates) => {
     if (!isAdmin) return;
-    setNodes((prev) => {
-      const updatedNodes = prev.map((n) => (n.id === id ? { ...n, ...updates } : n));
-      const updatedNode = updatedNodes.find((n) => n.id === id);
-      if (updatedNode) emitOp('sitemap:node:upsert', updatedNode);
-      return updatedNodes;
-    });
+    setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, ...updates } : n)));
+    const current = nodesRef.current.find((n) => n.id === id);
+    if (current) emitOp('sitemap:node:upsert', { ...current, ...updates });
     triggerAutoSave();
   };
 
