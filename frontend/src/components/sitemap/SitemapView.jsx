@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { SitemapCanvas } from './SitemapCanvas';
 import { SitemapToolbar } from './SitemapToolbar';
 import { SitemapLightbox } from './SitemapLightbox';
+import { SitemapLibraryDrawer, fileToBase64 } from './SitemapLibraryDrawer';
 import {
   getSitemap,
   updateSitemap,
@@ -17,6 +18,8 @@ export const SitemapView = () => {
 
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
+  const [library, setLibrary] = useState([]);
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [selectedId, setSelectedId] = useState(null);
@@ -27,9 +30,7 @@ export const SitemapView = () => {
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [pasteToast, setPasteToast] = useState(null);
 
-  const fileInputRef = useRef(null);
   const saveTimeoutRef = useRef(null);
-  const isInitialMount = useRef(true);
   const mousePosRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export const SitemapView = () => {
         if (data) {
           setNodes(data.nodes || []);
           setEdges(data.edges || []);
+          setLibrary(data.library || []);
           if (data.viewport) {
             setPan({ x: data.viewport.x || 0, y: data.viewport.y || 0 });
             setZoom(data.viewport.zoom || 1);
@@ -52,7 +54,7 @@ export const SitemapView = () => {
     fetchSitemapData();
   }, []);
 
-  const triggerAutoSave = useCallback((updatedNodes, updatedEdges, updatedViewport) => {
+  const triggerAutoSave = useCallback((updatedNodes, updatedEdges, updatedViewport, updatedLibrary) => {
     if (!isAdmin) return;
     setSaveStatus('unsaved');
 
@@ -66,6 +68,7 @@ export const SitemapView = () => {
         await updateSitemap({
           nodes: updatedNodes !== undefined ? updatedNodes : nodes,
           edges: updatedEdges !== undefined ? updatedEdges : edges,
+          library: updatedLibrary !== undefined ? updatedLibrary : library,
           viewport: updatedViewport !== undefined ? updatedViewport : { ...pan, zoom }
         });
         setSaveStatus('saved');
@@ -74,14 +77,7 @@ export const SitemapView = () => {
         setSaveStatus('unsaved');
       }
     }, 1200);
-  }, [isAdmin, nodes, edges, pan, zoom]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-  }, [nodes, edges, pan, zoom]);
+  }, [isAdmin, nodes, edges, library, pan, zoom]);
 
   const handleMouseMove = (e) => {
     mousePosRef.current = { x: e.clientX, y: e.clientY };
@@ -91,15 +87,8 @@ export const SitemapView = () => {
     if (!isAdmin) return;
 
     try {
-      setPasteToast('Subiendo y procesando imagen...');
-      const response = await uploadSitemapImage(file);
-      const uploadedFile = response.file || response.files?.[0];
-
-      if (!uploadedFile) {
-        setPasteToast('Error al subir la imagen');
-        setTimeout(() => setPasteToast(null), 3000);
-        return;
-      }
+      setPasteToast('Procesando imagen...');
+      const base64Data = await fileToBase64(file);
 
       let posX, posY;
       if (targetCanvasPos) {
@@ -115,6 +104,7 @@ export const SitemapView = () => {
         posY = (centerClientY - rect.top - pan.y) / zoom - 110;
       }
 
+      const fileTitle = (file.name || 'Pantalla').replace(/\.[^/.]+$/, '');
       const newNode = {
         id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
         type: 'image',
@@ -122,25 +112,108 @@ export const SitemapView = () => {
         y: Math.round(posY),
         width: 300,
         height: 220,
-        imageUrl: uploadedFile.url,
-        originalName: uploadedFile.originalName,
-        title: (uploadedFile.originalName || 'Pantalla').replace(/\.[^/.]+$/, ''),
+        imageUrl: base64Data,
+        originalName: file.name || 'image.png',
+        title: fileTitle,
         zIndex: nodes.length + 1
       };
 
+      const newLibraryItem = {
+        id: `lib-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        title: fileTitle,
+        originalName: file.name || 'image.png',
+        imageUrl: base64Data,
+        createdAt: new Date().toISOString()
+      };
+
       const newNodesList = [...nodes, newNode];
+      const newLibraryList = [newLibraryItem, ...library.filter((l) => l.title !== fileTitle)];
+
       setNodes(newNodesList);
+      setLibrary(newLibraryList);
       setSelectedId(newNode.id);
-      triggerAutoSave(newNodesList, edges, { ...pan, zoom });
+
+      triggerAutoSave(newNodesList, edges, { ...pan, zoom }, newLibraryList);
 
       setPasteToast('¡Imagen agregada al sitemap!');
       setTimeout(() => setPasteToast(null), 3000);
+
+      uploadSitemapImage(file).then((res) => {
+        const uploaded = res.file || res.files?.[0];
+        if (uploaded?.url) {
+          setNodes((prev) =>
+            prev.map((n) => (n.id === newNode.id ? { ...n, serverUrl: uploaded.url } : n))
+          );
+        }
+      }).catch((e) => console.warn('Server upload background sync:', e));
     } catch (err) {
-      console.error(err);
+      console.error('Error processing image:', err);
       setPasteToast('Error al procesar la imagen');
       setTimeout(() => setPasteToast(null), 3000);
     }
-  }, [isAdmin, pan, zoom, nodes, edges, triggerAutoSave]);
+  }, [isAdmin, pan, zoom, nodes, edges, library, triggerAutoSave]);
+
+  const addScreenNodeFromLibrary = useCallback((item, targetPos = null) => {
+    if (!isAdmin) return;
+
+    let posX, posY;
+    if (targetPos) {
+      posX = targetPos.x;
+      posY = targetPos.y;
+    } else {
+      const container = document.querySelector('.sitemap-view-container');
+      const rect = container?.getBoundingClientRect() || { left: 0, top: 0, width: 800, height: 600 };
+      const centerClientX = rect.left + rect.width / 2;
+      const centerClientY = rect.top + rect.height / 2;
+
+      posX = (centerClientX - rect.left - pan.x) / zoom - 150;
+      posY = (centerClientY - rect.top - pan.y) / zoom - 110;
+    }
+
+    const newNode = {
+      id: `node-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      type: 'image',
+      x: Math.round(posX),
+      y: Math.round(posY),
+      width: 300,
+      height: 220,
+      imageUrl: item.imageUrl,
+      originalName: item.originalName || item.title,
+      title: item.title || 'Pantalla',
+      zIndex: nodes.length + 1
+    };
+
+    const newNodesList = [...nodes, newNode];
+    setNodes(newNodesList);
+    setSelectedId(newNode.id);
+    triggerAutoSave(newNodesList, edges, { ...pan, zoom }, library);
+
+    setPasteToast('¡Pantalla añadida al mapa!');
+    setTimeout(() => setPasteToast(null), 2500);
+  }, [isAdmin, pan, zoom, nodes, edges, library, triggerAutoSave]);
+
+  const handleUploadScreensToLibrary = useCallback((items) => {
+    if (!isAdmin || !items || items.length === 0) return;
+    const newLibrary = [...items, ...library];
+    setLibrary(newLibrary);
+    triggerAutoSave(nodes, edges, { ...pan, zoom }, newLibrary);
+
+    setPasteToast(`¡${items.length} pantalla(s) subida(s) a la galería!`);
+    setTimeout(() => setPasteToast(null), 3000);
+
+    items.forEach((item) => {
+      if (item.file) {
+        uploadSitemapImage(item.file).catch((e) => console.warn('Background sync:', e));
+      }
+    });
+  }, [isAdmin, library, nodes, edges, pan, zoom, triggerAutoSave]);
+
+  const handleDeleteFromLibrary = useCallback((libId) => {
+    if (!isAdmin) return;
+    const newLibrary = library.filter((l) => l.id !== libId);
+    setLibrary(newLibrary);
+    triggerAutoSave(nodes, edges, { ...pan, zoom }, newLibrary);
+  }, [isAdmin, library, nodes, edges, pan, zoom, triggerAutoSave]);
 
   useEffect(() => {
     const handlePaste = (e) => {
@@ -219,6 +292,7 @@ export const SitemapView = () => {
         setSelectedId(null);
         setConnectingSource(null);
         setLightboxNode(null);
+        setIsLibraryOpen(false);
       }
     };
 
@@ -229,7 +303,9 @@ export const SitemapView = () => {
   const handleDragOver = (e) => {
     e.preventDefault();
     if (!isAdmin) return;
-    setIsDraggingFile(true);
+    if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+      setIsDraggingFile(true);
+    }
   };
 
   const handleDragLeave = (e) => {
@@ -242,15 +318,28 @@ export const SitemapView = () => {
     setIsDraggingFile(false);
     if (!isAdmin) return;
 
+    const container = document.querySelector('.sitemap-view-container');
+    const rect = container?.getBoundingClientRect() || { left: 0, top: 0 };
+    const dropPos = {
+      x: (e.clientX - rect.left - pan.x) / zoom - 150,
+      y: (e.clientY - rect.top - pan.y) / zoom - 110
+    };
+
+    const libraryData = e.dataTransfer.getData('application/json');
+    if (libraryData) {
+      try {
+        const item = JSON.parse(libraryData);
+        if (item && item.imageUrl) {
+          addScreenNodeFromLibrary(item, dropPos);
+          return;
+        }
+      } catch (err) {
+        console.error('Error parsing dropped library item:', err);
+      }
+    }
+
     const files = e.dataTransfer?.files;
     if (files && files.length > 0) {
-      const container = document.querySelector('.sitemap-view-container');
-      const rect = container?.getBoundingClientRect() || { left: 0, top: 0 };
-      const dropPos = {
-        x: (e.clientX - rect.left - pan.x) / zoom - 150,
-        y: (e.clientY - rect.top - pan.y) / zoom - 110
-      };
-
       for (let i = 0; i < files.length; i++) {
         if (files[i].type.startsWith('image/')) {
           processImageUpload(files[i], { x: dropPos.x + i * 40, y: dropPos.y + i * 40 });
@@ -286,17 +375,7 @@ export const SitemapView = () => {
     const newNodesList = [...nodes, newNote];
     setNodes(newNodesList);
     setSelectedId(newNote.id);
-    triggerAutoSave(newNodesList, edges, { ...pan, zoom });
-  };
-
-  const handleFileInputChange = (e) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        processImageUpload(files[i]);
-      }
-    }
-    e.target.value = '';
+    triggerAutoSave(newNodesList, edges, { ...pan, zoom }, library);
   };
 
   const handleUpdateNode = (id, updates) => {
@@ -304,7 +383,7 @@ export const SitemapView = () => {
 
     const updatedNodes = nodes.map((n) => (n.id === id ? { ...n, ...updates } : n));
     setNodes(updatedNodes);
-    triggerAutoSave(updatedNodes, edges, { ...pan, zoom });
+    triggerAutoSave(updatedNodes, edges, { ...pan, zoom }, library);
   };
 
   const handleDeleteNode = (id) => {
@@ -315,7 +394,7 @@ export const SitemapView = () => {
     setNodes(updatedNodes);
     setEdges(updatedEdges);
     if (selectedId === id) setSelectedId(null);
-    triggerAutoSave(updatedNodes, updatedEdges, { ...pan, zoom });
+    triggerAutoSave(updatedNodes, updatedEdges, { ...pan, zoom }, library);
   };
 
   const handleDeleteEdge = (id) => {
@@ -324,7 +403,7 @@ export const SitemapView = () => {
     const updatedEdges = edges.filter((e) => e.id !== id);
     setEdges(updatedEdges);
     if (selectedId === id) setSelectedId(null);
-    triggerAutoSave(nodes, updatedEdges, { ...pan, zoom });
+    triggerAutoSave(nodes, updatedEdges, { ...pan, zoom }, library);
   };
 
   const handleDeleteSelected = () => {
@@ -366,7 +445,7 @@ export const SitemapView = () => {
 
       const updatedEdges = [...edges, newEdge];
       setEdges(updatedEdges);
-      triggerAutoSave(nodes, updatedEdges, { ...pan, zoom });
+      triggerAutoSave(nodes, updatedEdges, { ...pan, zoom }, library);
     }
 
     setConnectingSource(null);
@@ -432,32 +511,24 @@ export const SitemapView = () => {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleFileInputChange}
-      />
-
       <SitemapToolbar
         isAdmin={isAdmin}
         zoom={zoom}
         saveStatus={saveStatus}
         selectedId={selectedId}
         currentArrowColor={currentArrowColor}
-        isConnecting={!!connectingSource}
+        isLibraryOpen={isLibraryOpen}
+        libraryCount={library.length}
         onZoomIn={() => setZoom((z) => Math.min(z * 1.15, 3.5))}
         onZoomOut={() => setZoom((z) => Math.max(z * 0.85, 0.15))}
         onResetZoom={handleResetZoom}
         onFitView={handleFitView}
         onAddNote={handleAddNote}
-        onUploadImageClick={() => fileInputRef.current?.click()}
+        onToggleLibrary={() => setIsLibraryOpen(!isLibraryOpen)}
         onArrowColorChange={(color) => setCurrentArrowColor(color)}
         onDeleteSelected={handleDeleteSelected}
         onClearSitemap={handleClearSitemap}
-        onManualSave={() => triggerAutoSave(nodes, edges, { ...pan, zoom })}
+        onManualSave={() => triggerAutoSave(nodes, edges, { ...pan, zoom }, library)}
       />
 
       <SitemapCanvas
@@ -486,6 +557,17 @@ export const SitemapView = () => {
         }}
       />
 
+      {isAdmin && (
+        <SitemapLibraryDrawer
+          isOpen={isLibraryOpen}
+          onClose={() => setIsLibraryOpen(false)}
+          library={library}
+          onAddToCanvas={addScreenNodeFromLibrary}
+          onUploadScreens={handleUploadScreensToLibrary}
+          onDeleteFromLibrary={handleDeleteFromLibrary}
+        />
+      )}
+
       {isDraggingFile && (
         <div className="sitemap-drag-indicator">
           <UploadCloud size={48} color="var(--accent-todo)" />
@@ -512,6 +594,9 @@ export const SitemapView = () => {
             <span>•</span>
             <span className="sitemap-hints-key">Ctrl + V</span>
             <span>Pegar imagen</span>
+            <span>•</span>
+            <span className="sitemap-hints-key">Galería</span>
+            <span>Arrastrar fotos</span>
           </>
         )}
       </div>

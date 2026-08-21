@@ -188,7 +188,12 @@ export const SitemapNode = ({
         </>
       )}
 
-      <div className="sitemap-node-card">
+      <div
+        className="sitemap-node-card"
+        style={{
+          backgroundColor: node.type === 'note' ? (node.color || '#FF7D8A') : undefined
+        }}
+      >
         {node.type === 'note' ? (
           <>
             <div className="sitemap-node-note-header">
@@ -226,13 +231,16 @@ export const SitemapNode = ({
             </div>
 
             {showColorPicker && isAdmin && (
-              <div className="sitemap-color-popover" onClick={(e) => e.stopPropagation()}>
+              <div className="sitemap-note-color-popover" onClick={(e) => e.stopPropagation()}>
                 {COLOR_OPTIONS.map((c) => (
                   <div
                     key={c}
                     className={`sitemap-color-dot ${node.color === c ? 'active' : ''}`}
                     style={{ backgroundColor: c }}
-                    onClick={() => { onUpdate(node.id, { color: c }); setShowColorPicker(false); }}
+                    onClick={() => {
+                      onUpdate(node.id, { color: c });
+                      setShowColorPicker(false);
+                    }}
                   />
                 ))}
               </div>

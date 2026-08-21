@@ -8,13 +8,12 @@ import {
   ZoomOut,
   Maximize,
   RotateCcw,
-  Sparkles,
   Save,
   Check,
   Loader2,
-  ShieldCheck,
   Eye,
-  Workflow
+  Workflow,
+  FolderPlus
 } from 'lucide-react';
 
 const NEON_ARROW_COLORS = [
@@ -31,12 +30,14 @@ export const SitemapToolbar = ({
   saveStatus,
   selectedId,
   currentArrowColor,
+  isLibraryOpen,
+  libraryCount = 0,
   onZoomIn,
   onZoomOut,
   onResetZoom,
   onFitView,
   onAddNote,
-  onUploadImageClick,
+  onToggleLibrary,
   onArrowColorChange,
   onDeleteSelected,
   onClearSitemap,
@@ -61,13 +62,15 @@ export const SitemapToolbar = ({
               </button>
 
               <button
-                className="sitemap-tool-btn"
-                onClick={onUploadImageClick}
-                title="Subir imagen o pegar con Ctrl+V"
+                className={`sitemap-tool-btn ${isLibraryOpen ? 'active' : ''}`}
+                onClick={onToggleLibrary}
+                title="Abrir Galería de Pantallas (subir y arrastrar fotos al mapa)"
               >
-                <Plus size={15} color="var(--accent-todo)" />
-                <ImageIcon size={15} />
-                <span>Imagen</span>
+                <FolderPlus size={15} color="var(--accent-todo)" />
+                <span>Galería / Subir</span>
+                {libraryCount > 0 && (
+                  <span className="sitemap-library-count">{libraryCount}</span>
+                )}
               </button>
             </div>
 

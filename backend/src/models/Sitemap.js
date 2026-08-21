@@ -1,5 +1,16 @@
 import mongoose from 'mongoose';
 
+const assetSchema = new mongoose.Schema(
+  {
+    id: { type: String, required: true },
+    title: { type: String, default: '' },
+    originalName: { type: String, default: '' },
+    imageUrl: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now }
+  },
+  { _id: false }
+);
+
 const nodeSchema = new mongoose.Schema(
   {
     id: { type: String, required: true },
@@ -41,6 +52,7 @@ const sitemapSchema = new mongoose.Schema(
     },
     nodes: [nodeSchema],
     edges: [edgeSchema],
+    library: [assetSchema],
     viewport: {
       x: { type: Number, default: 0 },
       y: { type: Number, default: 0 },

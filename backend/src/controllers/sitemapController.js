@@ -28,7 +28,7 @@ export const getSitemap = async (_req, res) => {
 
 export const updateSitemap = async (req, res) => {
   try {
-    const { nodes, edges, viewport } = req.body;
+    const { nodes, edges, viewport, library } = req.body;
 
     let sitemap = await Sitemap.findOne({ key: 'main' });
 
@@ -44,6 +44,9 @@ export const updateSitemap = async (req, res) => {
     }
     if (viewport !== undefined) {
       sitemap.viewport = viewport;
+    }
+    if (library !== undefined) {
+      sitemap.library = library;
     }
 
     sitemap.updatedBy = req.user._id;
