@@ -4,12 +4,9 @@ import {
   Maximize2,
   Palette,
   FileText,
-  Image as ImageIcon,
-  AlertTriangle,
-  Loader2,
+  Monitor,
   RefreshCw
 } from 'lucide-react';
-import { UPLOAD_BASE } from '../../services/api';
 
 const COLOR_OPTIONS = [
   '#FF7D8A',
@@ -20,6 +17,16 @@ const COLOR_OPTIONS = [
   '#FF9100',
   '#1E1E28'
 ];
+
+const buildImageUrl = (rawUrl) => {
+  if (!rawUrl) return null;
+  if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl.startsWith('http')) {
+    return rawUrl;
+  }
+  if (rawUrl.startsWith('/api/sitemap/image/')) return rawUrl;
+  const filename = rawUrl.split('/').pop();
+  return `/api/sitemap/image/${filename}`;
+};
 
 export const SitemapNode = ({
   node,
@@ -37,38 +44,15 @@ export const SitemapNode = ({
   onImageClick
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const nodeRef = useRef(null);
 
-  const getCandidates = (rawUrl) => {
-    if (!rawUrl) return [];
-    if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:')) {
-      return [rawUrl];
-    }
-    const cleanUrl = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
-    const filename = cleanUrl.split('/').pop();
-    const list = [
-      cleanUrl,
-      `${UPLOAD_BASE}${cleanUrl}`,
-      `/api/uploads/${filename}`,
-      `/uploads/${filename}`,
-      `/api/sitemap/image/${filename}`,
-      `http://localhost:5001/api/uploads/${filename}`,
-      `http://localhost:5001/uploads/${filename}`,
-      `http://localhost:5001/api/sitemap/image/${filename}`
-    ];
-    return Array.from(new Set(list.filter(Boolean)));
-  };
-
-  const candidates = getCandidates(node.imageUrl);
-  const currentImageUrl = candidates[candidateIndex] || node.imageUrl;
+  const imageUrl = buildImageUrl(node.imageUrl);
 
   useEffect(() => {
-    setCandidateIndex(0);
-    setImageError(false);
-    setImageLoaded(false);
+    setImgError(false);
+    setImgLoaded(false);
   }, [node.imageUrl]);
 
   const handlePointerDown = (e) => {
@@ -99,7 +83,6 @@ export const SitemapNode = ({
     const handlePointerMove = (moveEvent) => {
       const dx = (moveEvent.clientX - startClientX) / zoom;
       const dy = (moveEvent.clientY - startClientY) / zoom;
-
       onUpdate(node.id, {
         x: Math.round(startNodeX + dx),
         y: Math.round(startNodeY + dy)
@@ -135,25 +118,15 @@ export const SitemapNode = ({
       let newW = startW;
       let newH = startH;
 
-      if (direction.includes('e')) {
-        newW = Math.max(140, startW + dx);
-      }
-      if (direction.includes('s')) {
-        newH = Math.max(100, startH + dy);
-      }
+      if (direction.includes('e')) newW = Math.max(160, startW + dx);
+      if (direction.includes('s')) newH = Math.max(120, startH + dy);
       if (direction.includes('w')) {
         const potentialW = startW - dx;
-        if (potentialW >= 140) {
-          newW = potentialW;
-          newX = startX + dx;
-        }
+        if (potentialW >= 160) { newW = potentialW; newX = startX + dx; }
       }
       if (direction.includes('n')) {
         const potentialH = startH - dy;
-        if (potentialH >= 100) {
-          newH = potentialH;
-          newY = startY + dy;
-        }
+        if (potentialH >= 120) { newH = potentialH; newY = startY + dy; }
       }
 
       onUpdate(node.id, {
@@ -176,7 +149,6 @@ export const SitemapNode = ({
   const handleHandleAction = (e, handle) => {
     e.stopPropagation();
     if (!isAdmin) return;
-
     if (isConnectingMode && !isConnectingSource) {
       onFinishConnection(node.id, handle);
     } else {
@@ -184,41 +156,26 @@ export const SitemapNode = ({
     }
   };
 
-  const handleImageLoad = (e) => {
-    setImageLoaded(true);
-    setImageError(false);
-    const nw = e.target.naturalWidth;
-    const nh = e.target.naturalHeight;
-    if (nw && nh && (!node.width || !node.height || node.height === 220)) {
-      const ratio = nh / nw;
-      const targetW = Math.min(Math.max(node.width || 300, 240), 540);
-      const targetH = Math.round(targetW * ratio) + 36;
-      if (Math.abs(targetH - (node.height || 180)) > 20) {
-        onUpdate(node.id, { width: targetW, height: targetH });
-      }
-    }
-  };
-
-  const handleImageError = () => {
-    if (candidateIndex < candidates.length - 1) {
-      setCandidateIndex((prev) => prev + 1);
-    } else {
-      setImageError(true);
-      setImageLoaded(true);
-    }
-  };
-
   const isDarkNote = node.color === '#1E1E28';
+  const nodeW = node.width || 260;
+  const nodeH = node.height || 180;
 
   return (
     <div
       ref={nodeRef}
       data-node-id={node.id}
-      className={`sitemap-node ${node.type === 'image' ? 'sitemap-node-image' : 'sitemap-node-note'} ${isDarkNote ? 'theme-dark' : ''} ${isSelected ? 'is-selected' : ''} ${isConnectingSource ? 'is-connecting-source' : ''} ${isConnectingTarget ? 'is-connecting-target' : ''}`}
+      className={[
+        'sitemap-node',
+        node.type === 'image' ? 'sitemap-node-image' : 'sitemap-node-note',
+        isDarkNote ? 'theme-dark' : '',
+        isSelected ? 'is-selected' : '',
+        isConnectingSource ? 'is-connecting-source' : '',
+        isConnectingTarget ? 'is-connecting-target' : ''
+      ].filter(Boolean).join(' ')}
       style={{
         transform: `translate3d(${node.x}px, ${node.y}px, 0)`,
-        width: `${node.width || 260}px`,
-        height: `${node.height || 180}px`,
+        width: `${nodeW}px`,
+        height: `${nodeH}px`,
         zIndex: node.zIndex || (isSelected ? 10 : 1),
         '--note-bg': node.color || '#FF7D8A'
       }}
@@ -226,26 +183,10 @@ export const SitemapNode = ({
     >
       {isAdmin && (
         <>
-          <div
-            className="sitemap-handle handle-top"
-            onPointerDown={(e) => handleHandleAction(e, 'top')}
-            title="Conectar por arriba"
-          />
-          <div
-            className="sitemap-handle handle-right"
-            onPointerDown={(e) => handleHandleAction(e, 'right')}
-            title="Conectar por la derecha"
-          />
-          <div
-            className="sitemap-handle handle-bottom"
-            onPointerDown={(e) => handleHandleAction(e, 'bottom')}
-            title="Conectar por abajo"
-          />
-          <div
-            className="sitemap-handle handle-left"
-            onPointerDown={(e) => handleHandleAction(e, 'left')}
-            title="Conectar por la izquierda"
-          />
+          <div className="sitemap-handle handle-top" onPointerDown={(e) => handleHandleAction(e, 'top')} />
+          <div className="sitemap-handle handle-right" onPointerDown={(e) => handleHandleAction(e, 'right')} />
+          <div className="sitemap-handle handle-bottom" onPointerDown={(e) => handleHandleAction(e, 'bottom')} />
+          <div className="sitemap-handle handle-left" onPointerDown={(e) => handleHandleAction(e, 'left')} />
         </>
       )}
 
@@ -253,8 +194,8 @@ export const SitemapNode = ({
         {node.type === 'note' ? (
           <>
             <div className="sitemap-node-note-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
-                <FileText size={14} opacity={0.7} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, overflow: 'hidden' }}>
+                <FileText size={13} opacity={0.7} />
                 {isAdmin ? (
                   <input
                     type="text"
@@ -268,26 +209,17 @@ export const SitemapNode = ({
                   <span className="sitemap-node-title-input">{node.title || 'Nota'}</span>
                 )}
               </div>
-
               {isAdmin && (
                 <div className="sitemap-node-actions">
                   <button
                     className="sitemap-node-action-btn"
-                    title="Color de nota"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowColorPicker(!showColorPicker);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); setShowColorPicker(!showColorPicker); }}
                   >
                     <Palette size={13} />
                   </button>
                   <button
                     className="sitemap-node-action-btn"
-                    title="Eliminar nota"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(node.id);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onDelete(node.id); }}
                   >
                     <Trash2 size={13} />
                   </button>
@@ -302,10 +234,7 @@ export const SitemapNode = ({
                     key={c}
                     className={`sitemap-color-dot ${node.color === c ? 'active' : ''}`}
                     style={{ backgroundColor: c }}
-                    onClick={() => {
-                      onUpdate(node.id, { color: c });
-                      setShowColorPicker(false);
-                    }}
+                    onClick={() => { onUpdate(node.id, { color: c }); setShowColorPicker(false); }}
                   />
                 ))}
               </div>
@@ -327,110 +256,85 @@ export const SitemapNode = ({
           </>
         ) : (
           <>
-            <div className="sitemap-node-image-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1 }}>
-                <ImageIcon size={13} color="var(--accent-todo)" />
-                {isAdmin ? (
-                  <input
-                    type="text"
-                    className="sitemap-node-title-input"
-                    value={node.title || ''}
-                    placeholder="Nombre de vista..."
-                    onChange={(e) => onUpdate(node.id, { title: e.target.value })}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                ) : (
-                  <span className="sitemap-node-image-title">{node.title || 'Vista'}</span>
-                )}
+            <div className="sitemap-screen-header">
+              <div className="sitemap-screen-dots">
+                <span /><span /><span />
               </div>
-
-              {isAdmin && (
-                <div className="sitemap-node-actions">
+              {isAdmin ? (
+                <input
+                  type="text"
+                  className="sitemap-screen-title-input"
+                  value={node.title || ''}
+                  placeholder="Nombre de pantalla..."
+                  onChange={(e) => onUpdate(node.id, { title: e.target.value })}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <span className="sitemap-screen-title-text">{node.title || 'Pantalla'}</span>
+              )}
+              <div className="sitemap-node-actions" style={{ marginLeft: 'auto' }}>
+                {!isConnectingMode && (
                   <button
                     className="sitemap-node-action-btn"
-                    title="Eliminar imagen"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(node.id);
-                    }}
+                    title="Vista completa"
+                    onClick={(e) => { e.stopPropagation(); onImageClick && onImageClick(node); }}
                   >
-                    <Trash2 size={13} />
+                    <Maximize2 size={12} />
                   </button>
-                </div>
-              )}
+                )}
+                {isAdmin && (
+                  <button
+                    className="sitemap-node-action-btn"
+                    title="Eliminar pantalla"
+                    onClick={(e) => { e.stopPropagation(); onDelete(node.id); }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div
-              className="sitemap-node-image-body"
-              onClick={() => !isConnectingMode && onImageClick && onImageClick(node)}
+              className="sitemap-screen-body"
+              onClick={() => { if (!isConnectingMode) onImageClick && onImageClick(node); }}
             >
-              {currentImageUrl ? (
+              {imageUrl && !imgError ? (
                 <>
-                  {imageError ? (
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '6px', color: 'var(--accent-blocked)', padding: '16px', textAlign: 'center' }}>
-                      <AlertTriangle size={24} />
-                      <span style={{ fontSize: '0.75rem' }}>No se pudo cargar la imagen</span>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ marginTop: 4, padding: '2px 8px', fontSize: '0.7rem' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCandidateIndex(0);
-                          setImageError(false);
-                          setImageLoaded(false);
-                        }}
-                      >
-                        <RefreshCw size={10} />
-                        <span>Reintentar</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <img
-                      src={currentImageUrl}
-                      alt={node.title || 'Sitemap Screen'}
-                      className="sitemap-node-img"
-                      loading="eager"
-                      onLoad={handleImageLoad}
-                      onError={handleImageError}
-                    />
-                  )}
-
-                  {!imageLoaded && !imageError && (
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
-                      <Loader2 size={24} className="spin-animation" color="var(--accent-todo)" />
+                  <img
+                    key={imageUrl}
+                    src={imageUrl}
+                    alt={node.title || 'Pantalla'}
+                    className={`sitemap-screen-img ${imgLoaded ? 'is-loaded' : ''}`}
+                    onLoad={() => setImgLoaded(true)}
+                    onError={() => setImgError(true)}
+                  />
+                  {!imgLoaded && (
+                    <div className="sitemap-screen-loader">
+                      <Monitor size={28} color="var(--accent-todo)" opacity={0.5} />
                     </div>
                   )}
                 </>
+              ) : imgError ? (
+                <div className="sitemap-screen-error">
+                  <Monitor size={28} opacity={0.3} />
+                  <span>Sin imagen</span>
+                  {isAdmin && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={(e) => { e.stopPropagation(); setImgError(false); setImgLoaded(false); }}
+                    >
+                      <RefreshCw size={10} />
+                      <span>Reintentar</span>
+                    </button>
+                  )}
+                </div>
               ) : (
-                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                  Sin imagen
+                <div className="sitemap-screen-empty">
+                  <Monitor size={32} opacity={0.2} />
+                  <span>Sin imagen</span>
+                  {isAdmin && <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>Pega o arrastra una captura</span>}
                 </div>
               )}
-
-              <div className="sitemap-node-img-overlay">
-                <button
-                  className="sitemap-overlay-btn"
-                  title="Ampliar vista"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!isConnectingMode) onImageClick && onImageClick(node);
-                  }}
-                >
-                  <Maximize2 size={16} />
-                </button>
-                {isAdmin && (
-                  <button
-                    className="sitemap-overlay-btn btn-delete"
-                    title="Eliminar vista"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(node.id);
-                    }}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
             </div>
           </>
         )}
@@ -438,30 +342,12 @@ export const SitemapNode = ({
 
       {isAdmin && isSelected && (
         <>
-          <div
-            className="sitemap-resize-handle sitemap-resize-nw"
-            onPointerDown={(e) => handleResizePointerDown(e, 'nw')}
-          />
-          <div
-            className="sitemap-resize-handle sitemap-resize-ne"
-            onPointerDown={(e) => handleResizePointerDown(e, 'ne')}
-          />
-          <div
-            className="sitemap-resize-handle sitemap-resize-se"
-            onPointerDown={(e) => handleResizePointerDown(e, 'se')}
-          />
-          <div
-            className="sitemap-resize-handle sitemap-resize-sw"
-            onPointerDown={(e) => handleResizePointerDown(e, 'sw')}
-          />
-          <div
-            className="sitemap-resize-handle sitemap-resize-e"
-            onPointerDown={(e) => handleResizePointerDown(e, 'e')}
-          />
-          <div
-            className="sitemap-resize-handle sitemap-resize-s"
-            onPointerDown={(e) => handleResizePointerDown(e, 's')}
-          />
+          <div className="sitemap-resize-handle sitemap-resize-nw" onPointerDown={(e) => handleResizePointerDown(e, 'nw')} />
+          <div className="sitemap-resize-handle sitemap-resize-ne" onPointerDown={(e) => handleResizePointerDown(e, 'ne')} />
+          <div className="sitemap-resize-handle sitemap-resize-se" onPointerDown={(e) => handleResizePointerDown(e, 'se')} />
+          <div className="sitemap-resize-handle sitemap-resize-sw" onPointerDown={(e) => handleResizePointerDown(e, 'sw')} />
+          <div className="sitemap-resize-handle sitemap-resize-e" onPointerDown={(e) => handleResizePointerDown(e, 'e')} />
+          <div className="sitemap-resize-handle sitemap-resize-s" onPointerDown={(e) => handleResizePointerDown(e, 's')} />
         </>
       )}
     </div>

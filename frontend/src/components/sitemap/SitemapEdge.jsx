@@ -106,17 +106,18 @@ export const SitemapEdge = ({
       />
 
       {isAdmin && isSelected && (
-        <g
-          className="sitemap-edge-delete-btn"
-          transform={`translate(${midX}, ${midY})`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete && onDelete(edge.id);
-          }}
-        >
-          <circle r="12" fill="#181824" stroke="var(--accent-blocked)" strokeWidth="1.5" />
-          <g transform="translate(-6, -6)">
-            <Trash2 size={12} color="var(--accent-blocked)" />
+        <g transform={`translate(${midX}, ${midY})`}>
+          <g
+            className="sitemap-edge-delete-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete && onDelete(edge.id);
+            }}
+          >
+            <circle r="12" fill="#181824" stroke="var(--accent-blocked)" strokeWidth="1.5" />
+            <g transform="translate(-6, -6)">
+              <Trash2 size={12} color="var(--accent-blocked)" />
+            </g>
           </g>
         </g>
       )}

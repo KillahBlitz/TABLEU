@@ -1,13 +1,20 @@
 import React, { useEffect } from 'react';
-import { X, Image as ImageIcon, ExternalLink, Download } from 'lucide-react';
-import { UPLOAD_BASE } from '../../services/api';
+import { X, Image as ImageIcon, Download } from 'lucide-react';
+
+const buildImageUrl = (rawUrl) => {
+  if (!rawUrl) return null;
+  if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:') || rawUrl.startsWith('http')) {
+    return rawUrl;
+  }
+  if (rawUrl.startsWith('/api/sitemap/image/')) return rawUrl;
+  const filename = rawUrl.split('/').pop();
+  return `/api/sitemap/image/${filename}`;
+};
 
 export const SitemapLightbox = ({ node, onClose }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -15,9 +22,7 @@ export const SitemapLightbox = ({ node, onClose }) => {
 
   if (!node) return null;
 
-  const imageUrl = node.imageUrl?.startsWith('http')
-    ? node.imageUrl
-    : `${UPLOAD_BASE}${node.imageUrl}`;
+  const imageUrl = buildImageUrl(node.imageUrl);
 
   return (
     <div className="sitemap-lightbox-modal" onClick={onClose}>

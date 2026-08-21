@@ -71,7 +71,7 @@ export const uploadSitemapImage = async (req, res) => {
       originalName: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
-      url: `/api/uploads/${file.filename}`
+      url: `/api/sitemap/image/${file.filename}`
     }));
 
     return res.json({
