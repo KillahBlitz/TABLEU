@@ -8,10 +8,10 @@ export const getHandleCoordinates = (node, handle = 'auto', otherNode = null) =>
   const cx = node.x + w / 2;
   const cy = node.y + h / 2;
 
-  if (handle === 'top') return { x: cx, y: node.y };
-  if (handle === 'bottom') return { x: cx, y: node.y + h };
-  if (handle === 'left') return { x: node.x, y: cy };
-  if (handle === 'right') return { x: node.x + w, y: cy };
+  if (handle === 'top') return { x: cx, y: node.y - 12 };
+  if (handle === 'bottom') return { x: cx, y: node.y + h + 12 };
+  if (handle === 'left') return { x: node.x - 12, y: cy };
+  if (handle === 'right') return { x: node.x + w + 12, y: cy };
 
   if (otherNode) {
     const ocx = otherNode.x + (otherNode.width || 260) / 2;
@@ -20,13 +20,13 @@ export const getHandleCoordinates = (node, handle = 'auto', otherNode = null) =>
     const dy = ocy - cy;
 
     if (Math.abs(dx) >= Math.abs(dy)) {
-      return dx >= 0 ? { x: node.x + w, y: cy } : { x: node.x, y: cy };
+      return dx >= 0 ? { x: node.x + w + 12, y: cy } : { x: node.x - 12, y: cy };
     } else {
-      return dy >= 0 ? { x: cx, y: node.y + h } : { x: cx, y: node.y };
+      return dy >= 0 ? { x: cx, y: node.y + h + 12 } : { x: cx, y: node.y - 12 };
     }
   }
 
-  return { x: node.x + w, y: cy };
+  return { x: node.x + w + 12, y: cy };
 };
 
 export const computeBezierPath = (sourcePos, targetPos) => {

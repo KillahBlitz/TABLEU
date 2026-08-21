@@ -3,6 +3,7 @@ import {
   getSitemap,
   updateSitemap,
   uploadSitemapImage,
+  getSitemapImage,
   clearSitemap
 } from '../controllers/sitemapController.js';
 import { protect } from '../middlewares/authMiddleware.js';
@@ -11,6 +12,7 @@ import { handleUpload } from '../middlewares/uploadMiddleware.js';
 
 const router = express.Router();
 
+router.get('/image/:filename', getSitemapImage);
 router.get('/', protect, getSitemap);
 router.put('/', protect, requireAdmin, updateSitemap);
 router.post('/upload', protect, requireAdmin, handleUpload, uploadSitemapImage);

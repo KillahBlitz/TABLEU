@@ -1,4 +1,10 @@
 import Sitemap from '../models/Sitemap.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const getSitemap = async (_req, res) => {
   try {
@@ -73,6 +79,28 @@ export const uploadSitemapImage = async (req, res) => {
       files: uploadedFiles,
       file: uploadedFiles[0]
     });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSitemapImage = async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const uploadDir = path.resolve(__dirname, '../../uploads');
+    const filePath = path.join(uploadDir, filename);
+
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    }
+
+    const files = fs.readdirSync(uploadDir);
+    const matched = files.find((f) => f.startsWith(filename.split('.')[0]));
+    if (matched) {
+      return res.sendFile(path.join(uploadDir, matched));
+    }
+
+    return res.status(404).json({ message: 'Image not found' });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

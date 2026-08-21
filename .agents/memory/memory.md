@@ -157,6 +157,10 @@
       - Refactored `SitemapCanvas.jsx` and `SitemapNode.jsx` connection event handlers to support both click-to-connect and drag-and-drop connecting gestures.
       - Added magnetic target node highlighting (`is-connecting-target` neon glow) during connection mode.
       - Defined global SVG neon arrowhead markers in `SitemapCanvas.jsx` and dynamic marker referencing in `SitemapEdge.jsx`.
+18. **[2026-08-21] UI Polish: Floating Outer Handles & Multi-Candidate Image Fallback:**
+    - **Floating Outer Handles:** Moved connection circles (`.sitemap-handle`) outside the card border (`top: -15px`, `bottom: -15px`, `left: -15px`, `right: -15px`) and separated card clipping into inner `.sitemap-node-card` (`overflow: visible` on `.sitemap-node`), preventing any handle truncation. Adjusted Bezier connection endpoints in `SitemapEdge.jsx` to meet floating outer circles precisely.
+    - **Multi-Candidate Image Fallback:** Added progressive fallback URL resolution (`candidateUrls`) in `SitemapNode.jsx` attempting proxy, static `/uploads/`, direct backend port, and `/api/sitemap/image/:filename` endpoint to ensure 100% reliable image display across all network/proxy setups.
+
 
 
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Trash2,
   Maximize2,
@@ -6,7 +6,8 @@ import {
   FileText,
   Image as ImageIcon,
   AlertTriangle,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 import { UPLOAD_BASE } from '../../services/api';
 
@@ -38,7 +39,37 @@ export const SitemapNode = ({
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [candidateIndex, setCandidateIndex] = useState(0);
   const nodeRef = useRef(null);
+
+  const getCandidates = (rawUrl) => {
+    if (!rawUrl) return [];
+    if (rawUrl.startsWith('data:') || rawUrl.startsWith('blob:')) {
+      return [rawUrl];
+    }
+    const cleanUrl = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+    const filename = cleanUrl.split('/').pop();
+    const list = [
+      cleanUrl,
+      `${UPLOAD_BASE}${cleanUrl}`,
+      `/api/uploads/${filename}`,
+      `/uploads/${filename}`,
+      `/api/sitemap/image/${filename}`,
+      `http://localhost:5001/api/uploads/${filename}`,
+      `http://localhost:5001/uploads/${filename}`,
+      `http://localhost:5001/api/sitemap/image/${filename}`
+    ];
+    return Array.from(new Set(list.filter(Boolean)));
+  };
+
+  const candidates = getCandidates(node.imageUrl);
+  const currentImageUrl = candidates[candidateIndex] || node.imageUrl;
+
+  useEffect(() => {
+    setCandidateIndex(0);
+    setImageError(false);
+    setImageLoaded(false);
+  }, [node.imageUrl]);
 
   const handlePointerDown = (e) => {
     e.stopPropagation();
@@ -153,18 +184,6 @@ export const SitemapNode = ({
     }
   };
 
-  const resolveImageUrl = (url) => {
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) {
-      return url;
-    }
-    const cleanPath = url.startsWith('/') ? url : `/${url}`;
-    return `${UPLOAD_BASE}${cleanPath}`;
-  };
-
-  const imageUrl = resolveImageUrl(node.imageUrl);
-  const isDarkNote = node.color === '#1E1E28';
-
   const handleImageLoad = (e) => {
     setImageLoaded(true);
     setImageError(false);
@@ -179,6 +198,17 @@ export const SitemapNode = ({
       }
     }
   };
+
+  const handleImageError = () => {
+    if (candidateIndex < candidates.length - 1) {
+      setCandidateIndex((prev) => prev + 1);
+    } else {
+      setImageError(true);
+      setImageLoaded(true);
+    }
+  };
+
+  const isDarkNote = node.color === '#1E1E28';
 
   return (
     <div
@@ -219,180 +249,192 @@ export const SitemapNode = ({
         </>
       )}
 
-      {node.type === 'note' ? (
-        <>
-          <div className="sitemap-node-note-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
-              <FileText size={14} opacity={0.7} />
-              {isAdmin ? (
-                <input
-                  type="text"
-                  className="sitemap-node-title-input"
-                  value={node.title || ''}
-                  placeholder="Título..."
-                  onChange={(e) => onUpdate(node.id, { title: e.target.value })}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <span className="sitemap-node-title-input">{node.title || 'Nota'}</span>
-              )}
-            </div>
-
-            {isAdmin && (
-              <div className="sitemap-node-actions">
-                <button
-                  className="sitemap-node-action-btn"
-                  title="Color de nota"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowColorPicker(!showColorPicker);
-                  }}
-                >
-                  <Palette size={13} />
-                </button>
-                <button
-                  className="sitemap-node-action-btn"
-                  title="Eliminar nota"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(node.id);
-                  }}
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          {showColorPicker && isAdmin && (
-            <div className="sitemap-color-popover" onClick={(e) => e.stopPropagation()}>
-              {COLOR_OPTIONS.map((c) => (
-                <div
-                  key={c}
-                  className={`sitemap-color-dot ${node.color === c ? 'active' : ''}`}
-                  style={{ backgroundColor: c }}
-                  onClick={() => {
-                    onUpdate(node.id, { color: c });
-                    setShowColorPicker(false);
-                  }}
-                />
-              ))}
-            </div>
-          )}
-
-          {isAdmin ? (
-            <textarea
-              className="sitemap-node-textarea"
-              value={node.content || ''}
-              placeholder="Escribe aquí tu información, notas o flujos..."
-              onChange={(e) => onUpdate(node.id, { content: e.target.value })}
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <div className="sitemap-node-note-viewtext">
-              {node.content || 'Sin contenido'}
-            </div>
-          )}
-        </>
-      ) : (
-        <>
-          <div className="sitemap-node-image-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1 }}>
-              <ImageIcon size={13} color="var(--accent-todo)" />
-              {isAdmin ? (
-                <input
-                  type="text"
-                  className="sitemap-node-title-input"
-                  value={node.title || ''}
-                  placeholder="Nombre de vista..."
-                  onChange={(e) => onUpdate(node.id, { title: e.target.value })}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <span className="sitemap-node-image-title">{node.title || 'Vista'}</span>
-              )}
-            </div>
-
-            {isAdmin && (
-              <div className="sitemap-node-actions">
-                <button
-                  className="sitemap-node-action-btn"
-                  title="Eliminar imagen"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(node.id);
-                  }}
-                >
-                  <Trash2 size={13} />
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div
-            className="sitemap-node-image-body"
-            onClick={() => onImageClick && onImageClick(node)}
-          >
-            {imageUrl ? (
-              <>
-                {!imageLoaded && !imageError && (
-                  <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Loader2 size={24} className="spin-animation" color="var(--accent-todo)" />
-                  </div>
-                )}
-
-                {imageError ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', color: 'var(--accent-blocked)', padding: '16px', textAlign: 'center' }}>
-                    <AlertTriangle size={24} />
-                    <span style={{ fontSize: '0.75rem' }}>No se pudo cargar la imagen</span>
-                  </div>
+      <div className="sitemap-node-card">
+        {node.type === 'note' ? (
+          <>
+            <div className="sitemap-node-note-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+                <FileText size={14} opacity={0.7} />
+                {isAdmin ? (
+                  <input
+                    type="text"
+                    className="sitemap-node-title-input"
+                    value={node.title || ''}
+                    placeholder="Título..."
+                    onChange={(e) => onUpdate(node.id, { title: e.target.value })}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 ) : (
-                  <img
-                    src={imageUrl}
-                    alt={node.title || 'Sitemap Screen'}
-                    className="sitemap-node-img"
-                    loading="eager"
-                    onLoad={handleImageLoad}
-                    onError={() => {
-                      setImageError(true);
-                      setImageLoaded(true);
+                  <span className="sitemap-node-title-input">{node.title || 'Nota'}</span>
+                )}
+              </div>
+
+              {isAdmin && (
+                <div className="sitemap-node-actions">
+                  <button
+                    className="sitemap-node-action-btn"
+                    title="Color de nota"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowColorPicker(!showColorPicker);
+                    }}
+                  >
+                    <Palette size={13} />
+                  </button>
+                  <button
+                    className="sitemap-node-action-btn"
+                    title="Eliminar nota"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(node.id);
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {showColorPicker && isAdmin && (
+              <div className="sitemap-color-popover" onClick={(e) => e.stopPropagation()}>
+                {COLOR_OPTIONS.map((c) => (
+                  <div
+                    key={c}
+                    className={`sitemap-color-dot ${node.color === c ? 'active' : ''}`}
+                    style={{ backgroundColor: c }}
+                    onClick={() => {
+                      onUpdate(node.id, { color: c });
+                      setShowColorPicker(false);
                     }}
                   />
-                )}
-              </>
-            ) : (
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                Sin imagen
+                ))}
               </div>
             )}
 
-            <div className="sitemap-node-img-overlay">
-              <button
-                className="sitemap-overlay-btn"
-                title="Ampliar vista"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onImageClick && onImageClick(node);
-                }}
-              >
-                <Maximize2 size={16} />
-              </button>
+            {isAdmin ? (
+              <textarea
+                className="sitemap-node-textarea"
+                value={node.content || ''}
+                placeholder="Escribe aquí tu información, notas o flujos..."
+                onChange={(e) => onUpdate(node.id, { content: e.target.value })}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <div className="sitemap-node-note-viewtext">
+                {node.content || 'Sin contenido'}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="sitemap-node-image-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1 }}>
+                <ImageIcon size={13} color="var(--accent-todo)" />
+                {isAdmin ? (
+                  <input
+                    type="text"
+                    className="sitemap-node-title-input"
+                    value={node.title || ''}
+                    placeholder="Nombre de vista..."
+                    onChange={(e) => onUpdate(node.id, { title: e.target.value })}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span className="sitemap-node-image-title">{node.title || 'Vista'}</span>
+                )}
+              </div>
+
               {isAdmin && (
-                <button
-                  className="sitemap-overlay-btn btn-delete"
-                  title="Eliminar vista"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(node.id);
-                  }}
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="sitemap-node-actions">
+                  <button
+                    className="sitemap-node-action-btn"
+                    title="Eliminar imagen"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(node.id);
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               )}
             </div>
-          </div>
-        </>
-      )}
+
+            <div
+              className="sitemap-node-image-body"
+              onClick={() => onImageClick && onImageClick(node)}
+            >
+              {currentImageUrl ? (
+                <>
+                  {!imageLoaded && !imageError && (
+                    <div style={{ position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Loader2 size={24} className="spin-animation" color="var(--accent-todo)" />
+                    </div>
+                  )}
+
+                  {imageError ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', color: 'var(--accent-blocked)', padding: '16px', textAlign: 'center' }}>
+                      <AlertTriangle size={24} />
+                      <span style={{ fontSize: '0.75rem' }}>No se pudo cargar la imagen</span>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        style={{ marginTop: 4, padding: '2px 8px', fontSize: '0.7rem' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCandidateIndex(0);
+                          setImageError(false);
+                          setImageLoaded(false);
+                        }}
+                      >
+                        <RefreshCw size={10} />
+                        <span>Reintentar</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <img
+                      src={currentImageUrl}
+                      alt={node.title || 'Sitemap Screen'}
+                      className="sitemap-node-img"
+                      loading="eager"
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                  )}
+                </>
+              ) : (
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  Sin imagen
+                </div>
+              )}
+
+              <div className="sitemap-node-img-overlay">
+                <button
+                  className="sitemap-overlay-btn"
+                  title="Ampliar vista"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onImageClick && onImageClick(node);
+                  }}
+                >
+                  <Maximize2 size={16} />
+                </button>
+                {isAdmin && (
+                  <button
+                    className="sitemap-overlay-btn btn-delete"
+                    title="Eliminar vista"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(node.id);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
 
       {isAdmin && isSelected && (
         <>
