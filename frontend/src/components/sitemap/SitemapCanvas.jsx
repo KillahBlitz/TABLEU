@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { MousePointer2 } from 'lucide-react';
 import { SitemapNode } from './SitemapNode';
 import { SitemapEdge, getHandleCoordinates, computeBezierPath, getMarkerId } from './SitemapEdge';
 
@@ -13,6 +14,7 @@ export const SitemapCanvas = ({
   connectingSource,
   currentArrowColor,
   isAdmin,
+  remoteCursors = {},
   onPanChange,
   onZoomChange,
   onSelectNode,
@@ -265,6 +267,21 @@ export const SitemapCanvas = ({
               onFinishConnection={onFinishConnection}
               onImageClick={onImageClick}
             />
+          ))}
+        </div>
+
+        <div className="sitemap-cursors-layer">
+          {Object.entries(remoteCursors).map(([socketId, cursor]) => (
+            <div
+              key={socketId}
+              className="sitemap-remote-cursor"
+              style={{ left: `${cursor.x}px`, top: `${cursor.y}px`, '--c': cursor.color }}
+            >
+              <MousePointer2 size={16} color={cursor.color} style={{ filter: `drop-shadow(0 0 4px ${cursor.color})` }} />
+              <span className="sitemap-cursor-label" style={{ background: cursor.color }}>
+                {cursor.name}
+              </span>
+            </div>
           ))}
         </div>
       </div>

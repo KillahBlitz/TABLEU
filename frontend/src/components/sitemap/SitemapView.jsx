@@ -10,6 +10,11 @@ import {
   uploadSitemapImage,
   clearSitemap as apiClearSitemap
 } from '../../services/sitemapService';
+import {
+  connectSitemapSocket,
+  getSitemapSocket,
+  disconnectSitemapSocket
+} from '../../services/sitemapSocket';
 import { UploadCloud, CheckCircle2 } from 'lucide-react';
 import '../../styles/sitemap.css';
 
@@ -30,8 +35,14 @@ export const SitemapView = () => {
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [pasteToast, setPasteToast] = useState(null);
 
+  const [remoteCursors, setRemoteCursors] = useState({});
+
   const saveTimeoutRef = useRef(null);
   const mousePosRef = useRef({ x: 0, y: 0 });
+  const saveStatusRef = useRef('saved');
+  const panRef = useRef({ x: 0, y: 0 });
+  const zoomRef = useRef(1);
+  const lastCursorEmitRef = useRef(0);
 
   useEffect(() => {
     const fetchSitemapData = async () => {
@@ -52,6 +63,47 @@ export const SitemapView = () => {
     };
 
     fetchSitemapData();
+  }, []);
+
+  useEffect(() => { saveStatusRef.current = saveStatus; }, [saveStatus]);
+  useEffect(() => { panRef.current = pan; }, [pan]);
+  useEffect(() => { zoomRef.current = zoom; }, [zoom]);
+
+  useEffect(() => {
+    const socket = connectSitemapSocket();
+
+    const handleSitemapUpdated = (data) => {
+      if (saveStatusRef.current !== 'saved') return;
+      if (data.nodes !== undefined) setNodes(data.nodes);
+      if (data.edges !== undefined) setEdges(data.edges);
+      if (data.library !== undefined) setLibrary(data.library || []);
+    };
+
+    const handleCursor = (data) => {
+      setRemoteCursors((prev) => ({
+        ...prev,
+        [data.socketId]: { name: data.name, color: data.color || '#00E5FF', x: data.x, y: data.y }
+      }));
+    };
+
+    const handleCursorLeave = ({ socketId }) => {
+      setRemoteCursors((prev) => {
+        const next = { ...prev };
+        delete next[socketId];
+        return next;
+      });
+    };
+
+    socket.on('sitemap:updated', handleSitemapUpdated);
+    socket.on('sitemap:cursor', handleCursor);
+    socket.on('sitemap:cursor:leave', handleCursorLeave);
+
+    return () => {
+      socket.off('sitemap:updated', handleSitemapUpdated);
+      socket.off('sitemap:cursor', handleCursor);
+      socket.off('sitemap:cursor:leave', handleCursorLeave);
+      disconnectSitemapSocket();
+    };
   }, []);
 
   const triggerAutoSave = useCallback((updatedNodes, updatedEdges, updatedViewport, updatedLibrary) => {
@@ -81,6 +133,24 @@ export const SitemapView = () => {
 
   const handleMouseMove = (e) => {
     mousePosRef.current = { x: e.clientX, y: e.clientY };
+
+    const now = Date.now();
+    if (now - lastCursorEmitRef.current < 50) return;
+    lastCursorEmitRef.current = now;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const canvasX = (e.clientX - rect.left - panRef.current.x) / zoomRef.current;
+    const canvasY = (e.clientY - rect.top - panRef.current.y) / zoomRef.current;
+
+    const socket = getSitemapSocket();
+    if (socket?.connected) {
+      socket.emit('sitemap:cursor', {
+        x: canvasX,
+        y: canvasY,
+        name: user?.name || 'Usuario',
+        color: user?.avatarColor || '#00E5FF'
+      });
+    }
   };
 
   const processImageUpload = useCallback(async (file, targetCanvasPos = null) => {
@@ -540,6 +610,7 @@ export const SitemapView = () => {
         connectingSource={connectingSource}
         currentArrowColor={currentArrowColor}
         isAdmin={isAdmin}
+        remoteCursors={remoteCursors}
         onPanChange={(newPan) => setPan(newPan)}
         onZoomChange={(newZoom) => setZoom(newZoom)}
         onSelectNode={(id) => setSelectedId(id)}

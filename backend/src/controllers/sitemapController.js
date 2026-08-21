@@ -59,6 +59,7 @@ export const updateSitemap = async (req, res) => {
     getIO()?.to('sitemap-room').emit('sitemap:updated', {
       nodes: populated.nodes,
       edges: populated.edges,
+      library: populated.library,
       viewport: populated.viewport,
       updatedBy: populated.updatedBy
     });
