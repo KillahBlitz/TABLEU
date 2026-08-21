@@ -322,26 +322,14 @@
 
 .sitemap-screen-img {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.sitemap-screen-img.is-loaded {
-  opacity: 1;
-}
-
-.sitemap-screen-loader {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #0a0a10;
 }
 
 .sitemap-screen-error,

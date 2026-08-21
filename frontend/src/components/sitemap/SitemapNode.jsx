@@ -45,14 +45,12 @@ export const SitemapNode = ({
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
   const nodeRef = useRef(null);
 
   const imageUrl = buildImageUrl(node.imageUrl);
 
   useEffect(() => {
     setImgError(false);
-    setImgLoaded(false);
   }, [node.imageUrl]);
 
   const handlePointerDown = (e) => {
@@ -299,21 +297,20 @@ export const SitemapNode = ({
               onClick={() => { if (!isConnectingMode) onImageClick && onImageClick(node); }}
             >
               {imageUrl && !imgError ? (
-                <>
-                  <img
-                    key={imageUrl}
-                    src={imageUrl}
-                    alt={node.title || 'Pantalla'}
-                    className={`sitemap-screen-img ${imgLoaded ? 'is-loaded' : ''}`}
-                    onLoad={() => setImgLoaded(true)}
-                    onError={() => setImgError(true)}
-                  />
-                  {!imgLoaded && (
-                    <div className="sitemap-screen-loader">
-                      <Monitor size={28} color="var(--accent-todo)" opacity={0.5} />
-                    </div>
-                  )}
-                </>
+                <img
+                  src={imageUrl}
+                  alt={node.title || 'Pantalla'}
+                  className="sitemap-screen-img"
+                  onError={(e) => {
+                    if (!e.target.dataset.fallback) {
+                      e.target.dataset.fallback = '1';
+                      const filename = imageUrl.split('/').pop();
+                      e.target.src = `/api/uploads/${filename}`;
+                    } else {
+                      setImgError(true);
+                    }
+                  }}
+                />
               ) : imgError ? (
                 <div className="sitemap-screen-error">
                   <Monitor size={28} opacity={0.3} />
@@ -321,7 +318,7 @@ export const SitemapNode = ({
                   {isAdmin && (
                     <button
                       className="btn btn-secondary btn-sm"
-                      onClick={(e) => { e.stopPropagation(); setImgError(false); setImgLoaded(false); }}
+                      onClick={(e) => { e.stopPropagation(); setImgError(false); }}
                     >
                       <RefreshCw size={10} />
                       <span>Reintentar</span>
