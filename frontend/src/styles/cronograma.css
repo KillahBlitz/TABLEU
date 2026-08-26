@@ -119,6 +119,95 @@
   margin-left: 8px;
 }
 
+.cronograma-year-select {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cronograma-year-select:focus {
+  border-color: var(--accent-todo);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+.cronograma-range-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 3px 8px;
+}
+
+.range-picker-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.range-select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.range-select:focus {
+  border-color: var(--accent-todo);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
+}
+
+.range-presets-container {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.range-preset-btn {
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.range-preset-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.range-preset-btn.active {
+  background: var(--accent-todo);
+  color: #0d0d11;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
 .scale-btn {
   padding: 4px 10px;
   border-radius: 4px;

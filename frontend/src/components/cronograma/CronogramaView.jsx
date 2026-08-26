@@ -20,6 +20,21 @@ import {
 } from 'lucide-react';
 import '../../styles/cronograma.css';
 
+const MONTH_NAMES = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre'
+];
+
 const parseDateValue = (val) => {
   if (!val) return null;
   if (typeof val === 'string') {
@@ -86,8 +101,11 @@ export const CronogramaView = () => {
   const { isAdmin } = useAuth();
   const [epics, setEpics] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewScale, setViewScale] = useState('month');
+
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [startMonth, setStartMonth] = useState(0);
+  const [endMonth, setEndMonth] = useState(11);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isEpicModalOpen, setIsEpicModalOpen] = useState(false);
   const [selectedEpic, setSelectedEpic] = useState(null);
@@ -110,33 +128,25 @@ export const CronogramaView = () => {
     fetchEpics();
   }, []);
 
+  const yearOptions = useMemo(() => {
+    const currentY = new Date().getFullYear();
+    const years = new Set([currentY - 2, currentY - 1, currentY, currentY + 1, currentY + 2]);
+    epics.forEach((epic) => {
+      const s = parseDateValue(epic.startDate);
+      const t = parseDateValue(epic.targetDate);
+      if (s) years.add(s.getFullYear());
+      if (t) years.add(t.getFullYear());
+    });
+    return Array.from(years).sort((a, b) => a - b);
+  }, [epics]);
+
   const timelineRange = useMemo(() => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    if (viewScale === 'weeks') {
-      const start = startOfDay(addDays(currentDate, -14));
-      const end = endOfDay(addDays(currentDate, 14));
-      return { start, end };
-    }
-
-    if (viewScale === 'quarter') {
-      const qStartMonth = Math.floor(month / 3) * 3;
-      const start = startOfDay(new Date(year, qStartMonth, 1));
-      const end = endOfDay(new Date(year, qStartMonth + 3, 0));
-      return { start, end };
-    }
-
-    if (viewScale === 'year') {
-      const start = startOfDay(new Date(year, 0, 1));
-      const end = endOfDay(new Date(year, 11, 31));
-      return { start, end };
-    }
-
-    const start = startOfDay(new Date(year, month, 1));
-    const end = endOfDay(new Date(year, month + 1, 0));
+    const start = startOfDay(new Date(selectedYear, startMonth, 1));
+    const end = endOfDay(new Date(selectedYear, endMonth + 1, 0));
     return { start, end };
-  }, [currentDate, viewScale]);
+  }, [selectedYear, startMonth, endMonth]);
+
+  const totalMonthsCount = endMonth - startMonth + 1;
 
   const daysList = useMemo(() => {
     const days = [];
@@ -150,22 +160,19 @@ export const CronogramaView = () => {
 
   const monthsGrouped = useMemo(() => {
     const groups = [];
-    let currentMonth = null;
+    let currentM = null;
     let count = 0;
 
     daysList.forEach((day) => {
       const mKey = `${day.getFullYear()}-${day.getMonth()}`;
-      if (mKey !== currentMonth) {
-        if (currentMonth !== null) {
+      if (mKey !== currentM) {
+        if (currentM !== null) {
           groups.push({
-            name: new Date(day.getFullYear(), day.getMonth() - 1, 1).toLocaleDateString('es-ES', {
-              month: 'long',
-              year: 'numeric'
-            }),
+            name: MONTH_NAMES[parseInt(currentM.split('-')[1], 10)],
             count
           });
         }
-        currentMonth = mKey;
+        currentM = mKey;
         count = 1;
       } else {
         count++;
@@ -175,10 +182,7 @@ export const CronogramaView = () => {
     if (count > 0 && daysList.length > 0) {
       const lastDay = daysList[daysList.length - 1];
       groups.push({
-        name: lastDay.toLocaleDateString('es-ES', {
-          month: 'long',
-          year: 'numeric'
-        }),
+        name: MONTH_NAMES[lastDay.getMonth()],
         count
       });
     }
@@ -186,32 +190,41 @@ export const CronogramaView = () => {
     return groups;
   }, [daysList]);
 
-  const handlePrevPeriod = () => {
-    if (viewScale === 'weeks') {
-      setCurrentDate((prev) => addDays(prev, -14));
-    } else if (viewScale === 'quarter') {
-      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 3, 1));
-    } else if (viewScale === 'year') {
-      setCurrentDate((prev) => new Date(prev.getFullYear() - 1, 0, 1));
-    } else {
-      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  const handlePrevYear = () => {
+    setSelectedYear((prev) => prev - 1);
+  };
+
+  const handleNextYear = () => {
+    setSelectedYear((prev) => prev + 1);
+  };
+
+  const handleStartMonthChange = (m) => {
+    const newStart = parseInt(m, 10);
+    setStartMonth(newStart);
+    if (newStart > endMonth) {
+      setEndMonth(newStart);
     }
   };
 
-  const handleNextPeriod = () => {
-    if (viewScale === 'weeks') {
-      setCurrentDate((prev) => addDays(prev, 14));
-    } else if (viewScale === 'quarter') {
-      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 3, 1));
-    } else if (viewScale === 'year') {
-      setCurrentDate((prev) => new Date(prev.getFullYear() + 1, 0, 1));
-    } else {
-      setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  const handleEndMonthChange = (m) => {
+    const newEnd = parseInt(m, 10);
+    setEndMonth(newEnd);
+    if (newEnd < startMonth) {
+      setStartMonth(newEnd);
     }
+  };
+
+  const applyPreset = (start, end) => {
+    setStartMonth(start);
+    setEndMonth(end);
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date());
+    const now = new Date();
+    setSelectedYear(now.getFullYear());
+    const curM = now.getMonth();
+    setStartMonth(curM);
+    setEndMonth(Math.min(11, curM + 3));
   };
 
   const filteredEpics = useMemo(() => {
@@ -278,21 +291,15 @@ export const CronogramaView = () => {
   }, [timelineRange, totalRangeMs]);
 
   const currentPeriodTitle = useMemo(() => {
-    if (viewScale === 'weeks') {
-      return `${formatShortDate(timelineRange.start)} - ${formatShortDate(timelineRange.end)}`;
+    if (startMonth === endMonth) {
+      return `${MONTH_NAMES[startMonth]} ${selectedYear}`;
     }
-    if (viewScale === 'quarter') {
-      const q = Math.floor(currentDate.getMonth() / 3) + 1;
-      return `Q${q} ${currentDate.getFullYear()}`;
-    }
-    if (viewScale === 'year') {
-      return `${currentDate.getFullYear()}`;
-    }
-    return currentDate.toLocaleDateString('es-ES', {
-      month: 'long',
-      year: 'numeric'
-    });
-  }, [currentDate, viewScale, timelineRange]);
+    return `${MONTH_NAMES[startMonth]} - ${MONTH_NAMES[endMonth]} ${selectedYear}`;
+  }, [startMonth, endMonth, selectedYear]);
+
+  const isPresetActive = (start, end) => {
+    return startMonth === start && endMonth === end;
+  };
 
   const stats = useMemo(() => {
     const total = epics.length;
@@ -302,46 +309,99 @@ export const CronogramaView = () => {
   }, [epics, scheduledEpics, unscheduledEpics]);
 
   return (
-    <div className={`cronograma-container scale-${viewScale}`}>
+    <div className={`cronograma-container ${totalMonthsCount >= 7 ? 'scale-year' : ''}`}>
       <div className="cronograma-toolbar">
         <div className="cronograma-nav-controls">
-          <button className="btn-icon" onClick={handlePrevPeriod} title="Periodo anterior">
+          <button className="btn-icon" onClick={handlePrevYear} title="Año anterior">
             <ChevronLeft size={18} />
           </button>
-          <span className="cronograma-date-title">{currentPeriodTitle}</span>
-          <button className="btn-icon" onClick={handleNextPeriod} title="Periodo siguiente">
+
+          <select
+            className="cronograma-year-select"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+
+          <button className="btn-icon" onClick={handleNextYear} title="Año siguiente">
             <ChevronRight size={18} />
           </button>
-          <button className="btn btn-secondary btn-sm" onClick={handleToday}>
-            Hoy
-          </button>
 
-          <div className="cronograma-scale-selector">
-            <button
-              className={`scale-btn ${viewScale === 'weeks' ? 'active' : ''}`}
-              onClick={() => setViewScale('weeks')}
+          <div className="cronograma-range-picker">
+            <span className="range-picker-label">Desde:</span>
+            <select
+              className="range-select"
+              value={startMonth}
+              onChange={(e) => handleStartMonthChange(e.target.value)}
             >
-              Semanas
-            </button>
-            <button
-              className={`scale-btn ${viewScale === 'month' ? 'active' : ''}`}
-              onClick={() => setViewScale('month')}
+              {MONTH_NAMES.map((name, idx) => (
+                <option key={idx} value={idx}>
+                  {name}
+                </option>
+              ))}
+            </select>
+
+            <span className="range-picker-label">Hasta:</span>
+            <select
+              className="range-select"
+              value={endMonth}
+              onChange={(e) => handleEndMonthChange(e.target.value)}
             >
-              Mes
-            </button>
+              {MONTH_NAMES.map((name, idx) => (
+                <option key={idx} value={idx}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="range-presets-container">
             <button
-              className={`scale-btn ${viewScale === 'quarter' ? 'active' : ''}`}
-              onClick={() => setViewScale('quarter')}
-            >
-              Trimestre
-            </button>
-            <button
-              className={`scale-btn ${viewScale === 'year' ? 'active' : ''}`}
-              onClick={() => setViewScale('year')}
+              className={`range-preset-btn ${isPresetActive(0, 11) ? 'active' : ''}`}
+              onClick={() => applyPreset(0, 11)}
             >
               Año
             </button>
+            <button
+              className={`range-preset-btn ${isPresetActive(0, 2) ? 'active' : ''}`}
+              onClick={() => applyPreset(0, 2)}
+            >
+              Q1
+            </button>
+            <button
+              className={`range-preset-btn ${isPresetActive(3, 5) ? 'active' : ''}`}
+              onClick={() => applyPreset(3, 5)}
+            >
+              Q2
+            </button>
+            <button
+              className={`range-preset-btn ${isPresetActive(6, 8) ? 'active' : ''}`}
+              onClick={() => applyPreset(6, 8)}
+            >
+              Q3
+            </button>
+            <button
+              className={`range-preset-btn ${isPresetActive(9, 11) ? 'active' : ''}`}
+              onClick={() => applyPreset(9, 11)}
+            >
+              Q4
+            </button>
+            <button
+              className={`range-preset-btn ${isPresetActive(7, 11) ? 'active' : ''}`}
+              onClick={() => applyPreset(7, 11)}
+            >
+              Ago-Dic
+            </button>
           </div>
+
+          <button className="btn btn-secondary btn-sm" onClick={handleToday}>
+            Hoy
+          </button>
         </div>
 
         <div className="cronograma-filters">
@@ -369,6 +429,10 @@ export const CronogramaView = () => {
       </div>
 
       <div className="cronograma-stats-strip">
+        <div className="stat-chip">
+          <CalendarRange size={12} color="var(--accent-todo)" />
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{currentPeriodTitle}</span>
+        </div>
         <div className="stat-chip">
           <Layers size={12} color="var(--text-secondary)" />
           <span>Total: <strong>{stats.total}</strong></span>
@@ -469,8 +533,8 @@ export const CronogramaView = () => {
                         key={idx}
                         className={`timeline-day-cell ${isWeekend ? 'is-weekend' : ''} ${isToday ? 'is-today' : ''}`}
                       >
-                        {viewScale !== 'year' && <span className="timeline-day-num">{day.getDate()}</span>}
-                        {viewScale !== 'year' && <span className="timeline-day-name">{dayName}</span>}
+                        {totalMonthsCount <= 6 && <span className="timeline-day-num">{day.getDate()}</span>}
+                        {totalMonthsCount <= 6 && <span className="timeline-day-name">{dayName}</span>}
                       </div>
                     );
                   })}
@@ -502,7 +566,7 @@ export const CronogramaView = () => {
                 {scheduledEpics.length === 0 && !loading && (
                   <div className="cronograma-empty-state">
                     <CalendarRange size={36} color="var(--text-muted)" />
-                    <p>No hay épicas en el rango de fechas actual.</p>
+                    <p>No hay épicas en el rango de fechas seleccionado.</p>
                     {isAdmin && (
                       <button
                         className="btn btn-secondary btn-sm"
