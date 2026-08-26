@@ -1,0 +1,697 @@
+.sitemaps-hub-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 84px);
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-main-app);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.sitemaps-nav-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: rgba(24, 24, 28, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
+  z-index: 20;
+  gap: 16px;
+}
+
+.sitemaps-view-switch {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  gap: 4px;
+}
+
+.sitemaps-switch-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: calc(var(--radius-md) - 2px);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sitemaps-switch-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.sitemaps-switch-btn.active {
+  color: #0d0d11;
+  background: var(--accent-todo);
+  font-weight: 600;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+}
+
+.sitemaps-hub-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cronograma-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.03) 0%, transparent 40%),
+              radial-gradient(circle at 90% 80%, rgba(157, 0, 255, 0.03) 0%, transparent 40%),
+              #0d0d12;
+}
+
+.cronograma-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(20, 20, 26, 0.8);
+  border-bottom: 1px solid var(--border-color);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cronograma-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cronograma-date-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 170px;
+  text-align: center;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.cronograma-scale-selector {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+  margin-left: 8px;
+}
+
+.scale-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.scale-btn:hover {
+  color: var(--text-primary);
+}
+
+.scale-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--accent-todo);
+  font-weight: 600;
+}
+
+.cronograma-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cronograma-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cronograma-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.cronograma-search-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 6px 12px 6px 32px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  width: 190px;
+  transition: all 0.2s ease;
+}
+
+.cronograma-search-input:focus {
+  border-color: var(--accent-todo);
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+  width: 230px;
+}
+
+.status-filter-select {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.status-filter-select:focus {
+  border-color: var(--accent-todo);
+}
+
+.cronograma-stats-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 20px;
+  background: rgba(15, 15, 20, 0.6);
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+}
+
+.stat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.cronograma-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+.cronograma-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.cronograma-grid-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: auto;
+  position: relative;
+}
+
+.cronograma-epics-sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: rgba(18, 18, 24, 0.95);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+}
+
+.epics-sidebar-header {
+  height: 58px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(15, 15, 20, 0.98);
+}
+
+.epics-sidebar-row {
+  height: 64px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(20, 20, 26, 0.5);
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.epics-sidebar-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.epic-sidebar-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.epic-color-bar {
+  width: 4px;
+  height: 32px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.epic-sidebar-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.epic-sidebar-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: 0.2px;
+}
+
+.epic-sidebar-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cronograma-timeline-panel {
+  flex: 1;
+  min-width: 800px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #0e0e14;
+}
+
+.timeline-header-container {
+  height: 58px;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: rgba(15, 15, 20, 0.98);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-header-months {
+  height: 26px;
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.timeline-month-cell {
+  display: flex;
+  align-items: center;
+  padding-left: 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  border-right: 1px solid var(--border-subtle);
+  text-transform: capitalize;
+}
+
+.timeline-header-days {
+  height: 32px;
+  display: flex;
+}
+
+.timeline-day-cell {
+  flex: 1;
+  min-width: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.timeline-day-cell.is-weekend {
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.timeline-day-cell.is-today {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--accent-todo);
+  font-weight: 700;
+}
+
+.timeline-day-num {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.timeline-day-name {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.timeline-grid-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline-row {
+  height: 64px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.timeline-grid-columns {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  pointer-events: none;
+}
+
+.timeline-grid-col {
+  flex: 1;
+  min-width: 32px;
+  border-right: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.timeline-grid-col.is-weekend {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.timeline-today-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-todo);
+  box-shadow: 0 0 12px var(--accent-todo);
+  z-index: 6;
+  pointer-events: none;
+}
+
+.timeline-today-tag {
+  position: absolute;
+  top: 2px;
+  left: -20px;
+  background: var(--accent-todo);
+  color: #0d0d11;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 229, 255, 0.5);
+}
+
+.epic-block-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  z-index: 4;
+}
+
+.epic-block {
+  position: absolute;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  user-select: none;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  min-width: 36px;
+}
+
+.epic-block:hover {
+  transform: translateY(-2px);
+  z-index: 5;
+  filter: brightness(1.2);
+}
+
+.epic-block-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.epic-block-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+  letter-spacing: 0.25px;
+}
+
+.epic-status-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.epic-status-planning {
+  background: rgba(255, 255, 255, 0.15);
+  color: #e0e0e0;
+}
+
+.epic-status-in_progress {
+  background: rgba(255, 234, 0, 0.25);
+  color: #ffea00;
+  border: 1px solid rgba(255, 234, 0, 0.4);
+}
+
+.epic-status-completed {
+  background: rgba(0, 255, 204, 0.25);
+  color: #00ffcc;
+  border: 1px solid rgba(0, 255, 204, 0.4);
+}
+
+.epic-block-dates {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: var(--font-mono);
+  margin-left: 8px;
+}
+
+.cronograma-unscheduled-drawer {
+  background: rgba(16, 16, 22, 0.95);
+  border-top: 1px solid var(--border-color);
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.unscheduled-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.unscheduled-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.unscheduled-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.unscheduled-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.unscheduled-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--accent-todo);
+}
+
+.cronograma-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  gap: 12px;
+}
+
+.epic-detail-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.epic-detail-modal {
+  background: var(--bg-modal);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 520px;
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+}
+
+.epic-detail-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.epic-detail-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.epic-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+}
+
+.epic-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.epic-detail-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.epic-detail-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.epic-progress-bar-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.epic-progress-bar-fill {
+  height: 100%;
+  background: var(--accent-done);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.cronograma-container.scale-year .cronograma-timeline-panel {
+  min-width: 1200px;
+}
+
+.cronograma-container.scale-year .timeline-day-cell,
+.cronograma-container.scale-year .timeline-grid-col {
+  min-width: 3px;
+}

@@ -7,7 +7,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { AuthView } from './components/auth/AuthView';
 import { KanbanBoard } from './components/kanban/KanbanBoard';
 import { BacklogView } from './components/backlog/BacklogView';
-import { SitemapView } from './components/sitemap/SitemapView';
+import { SiteMapsContainer } from './components/sitemap/SiteMapsContainer';
 import { KpiDashboard } from './components/kpis/KpiDashboard';
 import { AttendanceDashboard } from './components/attendance/AttendanceDashboard';
 
@@ -50,10 +50,19 @@ export const App = () => {
             />
 
             <Route
+              path="/sitemaps"
+              element={
+                <ProtectedRoute>
+                  <SiteMapsContainer />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/sitemap"
               element={
                 <ProtectedRoute>
-                  <SitemapView />
+                  <SiteMapsContainer />
                 </ProtectedRoute>
               }
             />

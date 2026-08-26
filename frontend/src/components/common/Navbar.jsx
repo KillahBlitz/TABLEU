@@ -50,11 +50,11 @@ export const Navbar = () => {
           </NavLink>
 
           <NavLink
-            to="/sitemap"
+            to="/sitemaps"
             className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}
           >
             <Network size={16} />
-            <span>Sitemap</span>
+            <span>SiteMaps</span>
           </NavLink>
 
           {isAdmin && (
